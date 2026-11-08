@@ -5,6 +5,7 @@ Supports GNOME Shell and KDE Plasma 6 with live updates and reliable revert safe
 import os
 import shutil
 import subprocess
+import time
 from theme_hub.config import (
     CURRENT_THEME_FILE,
     BACKUP_DIR_GNOME,
@@ -12,6 +13,29 @@ from theme_hub.config import (
     THEMES,
     get_asset_path,
 )
+
+
+def _setup_env():
+    """Ensure XDG and Wayland / X11 environment variables are set."""
+    uid = os.getuid()
+    if "XDG_RUNTIME_DIR" not in os.environ:
+        os.environ["XDG_RUNTIME_DIR"] = f"/run/user/{uid}"
+
+    runtime_dir = os.environ["XDG_RUNTIME_DIR"]
+    if "WAYLAND_DISPLAY" not in os.environ and os.path.exists(runtime_dir):
+        for f in os.listdir(runtime_dir):
+            if f.startswith("wayland-"):
+                os.environ["WAYLAND_DISPLAY"] = f
+                break
+
+    if "DISPLAY" not in os.environ:
+        os.environ["DISPLAY"] = ":1"
+
+    if "XAUTHORITY" not in os.environ and os.path.exists(runtime_dir):
+        for f in os.listdir(runtime_dir):
+            if f.startswith("xauth_"):
+                os.environ["XAUTHORITY"] = os.path.join(runtime_dir, f)
+                break
 
 
 def detect_desktop_environment() -> str:
@@ -114,7 +138,7 @@ def ensure_backup():
 
     elif de == "kde":
         os.makedirs(BACKUP_DIR_KDE, exist_ok=True)
-        kde_configs = ["kdeglobals", "kwinrc", "kcminputrc", "plasma-org.kde.plasma.desktop-appletsrc"]
+        kde_configs = ["kdeglobals", "kwinrc", "kcminputrc", "plasma-org.kde.plasma.desktop-appletsrc", "plasmarc"]
         cfg_home = os.path.expanduser("~/.config")
         for cfg in kde_configs:
             src = os.path.join(cfg_home, cfg)
@@ -347,17 +371,18 @@ gtk-titlebar = true
 
 def _apply_kde(theme_id: str) -> bool:
     """Apply theme settings for KDE Plasma 6 cleanly without killing plasmashell."""
+    _setup_env()
     theme = next((t for t in THEMES if t["id"] == theme_id), None)
     if not theme:
         return False
 
-    # 1. Colorscheme & Accent
-    subprocess.call(["plasma-apply-colorscheme", "BreezeDark", "-a", theme["color"]])
-    subprocess.call(["plasma-apply-desktoptheme", "breeze-dark"])
+    # 1. Colorscheme, Accent & Desktop Theme (Panel)
+    subprocess.call(["plasma-apply-colorscheme", "BreezeDark", "-a", theme["color"]], stderr=subprocess.DEVNULL)
+    subprocess.call(["plasma-apply-desktoptheme", "breeze-dark"], stderr=subprocess.DEVNULL)
 
     # 2. Icons & Cursors
     subprocess.call(["kwriteconfig6", "--file", "kdeglobals", "--group", "Icons", "--key", "Theme", theme["icon_theme"]])
-    subprocess.call(["plasma-apply-cursortheme", theme["cursor_theme"]])
+    subprocess.call(["plasma-apply-cursortheme", theme["cursor_theme"]], stderr=subprocess.DEVNULL)
 
     # 3. Typography
     subprocess.call(["kwriteconfig6", "--file", "kdeglobals", "--group", "General", "--key", "font", "Inter,10.5,-1,5,50,0,0,0,0,0"])
@@ -369,22 +394,30 @@ def _apply_kde(theme_id: str) -> bool:
     subprocess.call(["kwriteconfig6", "--file", "kwinrc", "--group", "org.kde.kdecoration2", "--key", "ButtonsOnRight", theme["button_layout_kde_right"]])
 
     # 5. Wallpaper
-    if "wallpaper" in theme:
+    if "wallpaper" in theme and theme["wallpaper"]:
         wall_path = get_asset_path(*theme["wallpaper"])
     else:
         wall_path = get_asset_path(*theme.get("wallpaper_dark", ("backgrounds", "aesthetic", "calm-night.png")))
-    subprocess.call(["plasma-apply-wallpaperimage", wall_path])
+    subprocess.call(["plasma-apply-wallpaperimage", wall_path], stderr=subprocess.DEVNULL)
 
     # 6. Sync GSettings & GTK 3/4 settings for GTK apps running on KDE
-    gtk_layout = "close,minimize,maximize:appmenu" if theme_id == "mac" else "appmenu:minimize,maximize,close"
+    if theme_id == "mac":
+        gtk_layout = "close,minimize,maximize:"
+    elif theme_id == "windows":
+        gtk_layout = ":minimize,maximize,close"
+    else:
+        gtk_layout = "appmenu:close"
+
     sync_gtk_settings(dark_mode=True, icon_theme=theme["icon_theme"], cursor_theme=theme["cursor_theme"], button_layout=gtk_layout)
     subprocess.call(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", "prefer-dark"], stderr=subprocess.DEVNULL)
+    subprocess.call(["gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", "Breeze-Dark"], stderr=subprocess.DEVNULL)
     subprocess.call(["gsettings", "set", "org.gnome.desktop.interface", "icon-theme", theme["icon_theme"]], stderr=subprocess.DEVNULL)
     subprocess.call(["gsettings", "set", "org.gnome.desktop.interface", "cursor-theme", theme["cursor_theme"]], stderr=subprocess.DEVNULL)
     subprocess.call(["gsettings", "set", "org.gnome.desktop.wm.preferences", "button-layout", gtk_layout], stderr=subprocess.DEVNULL)
 
-    # 7. Live KWin & Sycoca reload
+    # 7. Live KWin & DBus reload
     subprocess.call(["qdbus6", "org.kde.KWin", "/KWin", "reconfigure"], stderr=subprocess.DEVNULL)
+    subprocess.call(["dbus-send", "--type=signal", "--session", "/KIconLoader", "org.kde.KIconLoader.iconChanged", "int32:0"], stderr=subprocess.DEVNULL)
     subprocess.call(["kbuildsycoca6", "--noincremental"], stderr=subprocess.DEVNULL)
 
     return True
@@ -448,24 +481,44 @@ def _revert_gnome() -> bool:
 
 def _revert_kde() -> bool:
     """Revert KDE Plasma to original stock settings without crashing."""
-    subprocess.call(["plasma-apply-colorscheme", "BreezeLight"], stderr=subprocess.DEVNULL)
-    subprocess.call(["plasma-apply-desktoptheme", "breeze-light"], stderr=subprocess.DEVNULL)
-    subprocess.call(["kwriteconfig6", "--file", "kdeglobals", "--group", "Icons", "--key", "Theme", "breeze"])
-    subprocess.call(["plasma-apply-cursortheme", "breeze_cursors"], stderr=subprocess.DEVNULL)
-    subprocess.call(["kwriteconfig6", "--file", "kwinrc", "--group", "org.kde.kdecoration2", "--key", "ButtonsOnLeft", "M"])
-    subprocess.call(["kwriteconfig6", "--file", "kwinrc", "--group", "org.kde.kdecoration2", "--key", "ButtonsOnRight", "IAX"])
+    _setup_env()
 
-    # Restore default Debian wallpaper
-    for deb_wall in ["/usr/share/wallpapers/DebianTheme", "/usr/share/wallpapers/Next"]:
-        if os.path.exists(deb_wall):
-            subprocess.call(["plasma-apply-wallpaperimage", deb_wall], stderr=subprocess.DEVNULL)
-            break
+    # 1. Gracefully stop plasma-plasmashell service
+    subprocess.call(["systemctl", "--user", "stop", "plasma-plasmashell"], stderr=subprocess.DEVNULL)
+    time.sleep(1)
 
-    # Restore GTK
-    sync_gtk_settings(dark_mode=False, icon_theme="breeze", cursor_theme="breeze_cursors")
+    # 2. Restore pristine backup files
+    if os.path.exists(BACKUP_DIR_KDE):
+        for cfg in ["plasma-org.kde.plasma.desktop-appletsrc", "kdeglobals", "kwinrc", "plasmarc"]:
+            src = os.path.join(BACKUP_DIR_KDE, cfg)
+            dst = os.path.expanduser(f"~/.config/{cfg}")
+            if os.path.exists(src):
+                shutil.copy2(src, dst)
 
-    # Reload KWin
+    # 3. Restart plasma-plasmashell service cleanly
+    subprocess.call(["systemctl", "--user", "start", "plasma-plasmashell"], stderr=subprocess.DEVNULL)
+    time.sleep(2)
+
+    # 4. Reconfigure KWin
     subprocess.call(["qdbus6", "org.kde.KWin", "/KWin", "reconfigure"], stderr=subprocess.DEVNULL)
+
+    # 5. Restore stock colors, desktop theme, and cursor
+    subprocess.call(["plasma-apply-colorscheme", "BreezeLight"], stderr=subprocess.DEVNULL)
+    subprocess.call(["plasma-apply-cursortheme", "breeze_cursors"], stderr=subprocess.DEVNULL)
+    res = subprocess.call(["plasma-apply-desktoptheme", "default"], stderr=subprocess.DEVNULL)
+    if res != 0:
+        subprocess.call(["plasma-apply-desktoptheme", "breeze-light"], stderr=subprocess.DEVNULL)
+
+    # 6. Revert GTK & GSettings
+    sync_gtk_settings(dark_mode=False, icon_theme="breeze", cursor_theme="breeze_cursors", button_layout="appmenu:close")
+    subprocess.call(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", "default"], stderr=subprocess.DEVNULL)
+    subprocess.call(["gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", "Breeze"], stderr=subprocess.DEVNULL)
+    subprocess.call(["gsettings", "set", "org.gnome.desktop.interface", "icon-theme", "breeze"], stderr=subprocess.DEVNULL)
+    subprocess.call(["gsettings", "set", "org.gnome.desktop.interface", "cursor-theme", "breeze_cursors"], stderr=subprocess.DEVNULL)
+    subprocess.call(["gsettings", "set", "org.gnome.desktop.wm.preferences", "button-layout", "appmenu:close"], stderr=subprocess.DEVNULL)
+
+    # 7. Broadcast changes & sycoca reload
+    subprocess.call(["dbus-send", "--type=signal", "--session", "/KIconLoader", "org.kde.KIconLoader.iconChanged", "int32:0"], stderr=subprocess.DEVNULL)
     subprocess.call(["kbuildsycoca6", "--noincremental"], stderr=subprocess.DEVNULL)
     return True
 
