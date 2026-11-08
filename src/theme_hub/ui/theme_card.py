@@ -1,4 +1,5 @@
 """Theme Card component for Theme Hub."""
+import os
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
@@ -16,9 +17,13 @@ class ThemeCard(Adw.ActionRow):
         self.set_subtitle(theme_data["subtitle"])
         self.set_subtitle_lines(3)
 
-        # Leading Icon
-        icon_img = Gtk.Image.new_from_icon_name(theme_data["icon"])
-        icon_img.set_pixel_size(32)
+        # Leading Icon (supports direct SVG file path or theme icon name)
+        icon_val = theme_data.get("icon", "")
+        if icon_val and os.path.exists(icon_val):
+            icon_img = Gtk.Image.new_from_file(icon_val)
+        else:
+            icon_img = Gtk.Image.new_from_icon_name(icon_val or "image-missing")
+        icon_img.set_pixel_size(36)
         icon_img.set_margin_start(8)
         icon_img.set_margin_end(8)
         self.add_prefix(icon_img)

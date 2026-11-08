@@ -101,7 +101,7 @@ class ThemeHubWindow(Adw.ApplicationWindow):
             f"Seamlessly transform your {self.de_name} interface into handcrafted environments. "
             "All changes apply instantly with one-click safe restore."
         )
-        banner.set_icon_name("preferences-desktop-theme")
+        banner.set_icon_name("io.github.themehub")
         content_box.append(banner)
 
         # Theme Group
