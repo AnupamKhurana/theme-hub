@@ -69,6 +69,23 @@ THEMES = [
         "description": "Clean, focused, modern dark theme designed for distraction-free coding and daily computing."
     },
     {
+        "id": "mac",
+        "title": "macOS Sonoma Look",
+        "subtitle": "Apple menu bar & Global AppMenu • Centered floating dock • WhiteSur icons • Sonoma 4K wallpaper",
+        "icon": get_asset_path("icons", "custom-launchers", "macos-launchpad.svg"),
+        "color": "#007aff",
+        "accent_name": "blue",
+        "wallpaper": ("backgrounds", "mac", "sonoma-dark.jpg"),
+        "icon_theme": "WhiteSur-dark",
+        "cursor_theme": "macOS",
+        "font_family": "Inter",
+        "font_mono": "JetBrains Mono",
+        "button_layout_gnome": "close,minimize,maximize:appmenu",
+        "button_layout_kde_left": "XIA",
+        "button_layout_kde_right": "",
+        "description": "Authentic Apple macOS experience featuring top Apple menu bar with Global Application Menu, floating centered dock with pinned apps, WhiteSur icons, and left traffic-light window controls."
+    },
+    {
         "id": "original",
         "title": "Stock Linux Defaults",
         "subtitle": "Restore default system themes, stock wallpapers, standard titlebar buttons, and original desktop layout",

@@ -175,7 +175,7 @@ class ThemeHubWindow(Adw.ApplicationWindow):
             issue_url="https://github.com/anupam/theme-hub/issues",
             copyright="© 2026 Antigravity",
             license_type=Gtk.License.GPL_3_0,
-            comments="Instant aesthetic appearance studio and defaults manager for Linux."
+            comments="Instant aesthetic and macOS appearance studio for Linux."
         )
         about.present()
 

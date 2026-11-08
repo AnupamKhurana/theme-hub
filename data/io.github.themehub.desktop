@@ -7,14 +7,18 @@ Icon=io.github.themehub
 Terminal=false
 Type=Application
 Categories=Settings;DesktopSettings;Utility;
-Keywords=theme;appearance;aesthetic;gnome;kde;plasma;wallpaper;dark-mode;
+Keywords=theme;appearance;mac;aesthetic;gnome;kde;plasma;wallpaper;dark-mode;
 StartupNotify=true
 StartupWMClass=io.github.themehub
-Actions=Aesthetic;Revert;
+Actions=Aesthetic;Mac;Revert;
 
 [Desktop Action Aesthetic]
 Name=Apply Modern Aesthetic Theme
 Exec=theme-hub-cli apply aesthetic
+
+[Desktop Action Mac]
+Name=Apply macOS Sonoma Look
+Exec=theme-hub-cli apply mac
 
 [Desktop Action Revert]
 Name=Revert to Stock Defaults

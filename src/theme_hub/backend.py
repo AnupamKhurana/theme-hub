@@ -88,7 +88,9 @@ def get_current_theme() -> str:
                 ["gsettings", "get", "org.gnome.desktop.interface", "icon-theme"],
                 text=True
             ).strip()
-            if "Tela" in out:
+            if "WhiteSur" in out:
+                return "mac"
+            elif "Tela" in out:
                 return "aesthetic"
             else:
                 return "original"
@@ -100,7 +102,9 @@ def get_current_theme() -> str:
                 ["kreadconfig6", "--file", "kdeglobals", "--group", "Icons", "--key", "Theme"],
                 text=True
             ).strip()
-            if "Tela" in out:
+            if "WhiteSur" in out:
+                return "mac"
+            elif "Tela" in out:
                 return "aesthetic"
             else:
                 return "original"
@@ -242,33 +246,62 @@ def _apply_gnome(theme_id: str) -> bool:
 
 def _apply_dash_to_panel_gnome(theme_id: str):
     """Configure Dash-to-Panel extension for GNOME Shell."""
-    if theme_id != "aesthetic":
-        return
+    launchpad_icon = get_asset_path("icons", "custom-launchers", "macos-launchpad.svg")
 
-    d = {
-        'stockgs-keep-top-panel': 'false',
-        'panel-lengths': '{"AUO-0x00000000":100}',
-        'panel-sizes': '{"AUO-0x00000000":44}',
-        'panel-positions': '{"AUO-0x00000000":"BOTTOM"}',
-        'panel-anchors': '{"AUO-0x00000000":"MIDDLE"}',
-        'panel-top-bottom-margins': '6',
-        'panel-side-margins': '12',
-        'global-border-radius': '12',
-        'trans-use-custom-opacity': 'true',
-        'trans-panel-opacity': '0.85',
-        'trans-use-custom-bg': 'true',
-        'trans-bg-color': '#11141c',
-        'dot-style-focused': 'DOTS',
-        'dot-style-unfocused': 'DOTS',
-        'dot-color-dominant': 'true',
-        'dot-color-override': 'false',
-        'highlight-appicon-hover': 'true',
-        'highlight-appicon-hover-border-radius': '8',
-        'animate-appicon-hover': 'true',
-        'animate-appicon-hover-animation-type': 'RIPPLE',
-        'show-apps-icon-file': '',
-        'panel-element-positions': '{"AUO-0x00000000":[{"element":"showAppsButton","visible":true,"position":"stackedTL"},{"element":"leftBox","visible":true,"position":"stackedTL"},{"element":"taskbar","visible":true,"position":"centerMonitor"},{"element":"activitiesButton","visible":false,"position":"stackedBR"},{"element":"centerBox","visible":true,"position":"stackedBR"},{"element":"rightBox","visible":true,"position":"stackedBR"},{"element":"dateMenu","visible":true,"position":"stackedBR"},{"element":"systemMenu","visible":true,"position":"stackedBR"},{"element":"desktopButton","visible":false,"position":"stackedBR"}]}'
-    }
+    if theme_id == "aesthetic":
+        d = {
+            'stockgs-keep-top-panel': 'false',
+            'panel-lengths': '{"AUO-0x00000000":100}',
+            'panel-sizes': '{"AUO-0x00000000":44}',
+            'panel-positions': '{"AUO-0x00000000":"BOTTOM"}',
+            'panel-anchors': '{"AUO-0x00000000":"MIDDLE"}',
+            'panel-top-bottom-margins': '6',
+            'panel-side-margins': '12',
+            'global-border-radius': '12',
+            'trans-use-custom-opacity': 'true',
+            'trans-panel-opacity': '0.85',
+            'trans-use-custom-bg': 'true',
+            'trans-bg-color': '#11141c',
+            'dot-style-focused': 'DOTS',
+            'dot-style-unfocused': 'DOTS',
+            'dot-color-dominant': 'true',
+            'dot-color-override': 'false',
+            'highlight-appicon-hover': 'true',
+            'highlight-appicon-hover-border-radius': '8',
+            'animate-appicon-hover': 'true',
+            'animate-appicon-hover-animation-type': 'RIPPLE',
+            'show-apps-icon-file': '',
+            'panel-element-positions': '{"AUO-0x00000000":[{"element":"showAppsButton","visible":true,"position":"stackedTL"},{"element":"leftBox","visible":true,"position":"stackedTL"},{"element":"taskbar","visible":true,"position":"centerMonitor"},{"element":"activitiesButton","visible":false,"position":"stackedBR"},{"element":"centerBox","visible":true,"position":"stackedBR"},{"element":"rightBox","visible":true,"position":"stackedBR"},{"element":"dateMenu","visible":true,"position":"stackedBR"},{"element":"systemMenu","visible":true,"position":"stackedBR"},{"element":"desktopButton","visible":false,"position":"stackedBR"}]}'
+        }
+    elif theme_id == "mac":
+        d = {
+            'stockgs-keep-top-panel': 'true',
+            'panel-lengths': '{"AUO-0x00000000":-1}',
+            'panel-sizes': '{"AUO-0x00000000":54}',
+            'panel-positions': '{"AUO-0x00000000":"BOTTOM"}',
+            'panel-anchors': '{"AUO-0x00000000":"MIDDLE"}',
+            'panel-top-bottom-margins': '10',
+            'panel-side-margins': '0',
+            'global-border-radius': '18',
+            'trans-use-custom-opacity': 'true',
+            'trans-panel-opacity': '0.60',
+            'trans-use-custom-bg': 'true',
+            'trans-bg-color': '#1e1e1e',
+            'dot-style-focused': 'DOTS',
+            'dot-style-unfocused': 'DOTS',
+            'dot-size': '4',
+            'dot-position': 'BOTTOM',
+            'dot-color-dominant': 'false',
+            'dot-color-override': 'false',
+            'highlight-appicon-hover': 'true',
+            'highlight-appicon-hover-border-radius': '10',
+            'animate-appicon-hover': 'true',
+            'animate-appicon-hover-animation-type': 'PLANK',
+            'show-apps-icon-file': launchpad_icon if os.path.exists(launchpad_icon) else '',
+            'panel-element-positions': '{"AUO-0x00000000":[{"element":"showAppsButton","visible":true,"position":"stackedTL"},{"element":"taskbar","visible":true,"position":"stackedTL"},{"element":"leftBox","visible":false,"position":"stackedTL"},{"element":"centerBox","visible":false,"position":"centered"},{"element":"activitiesButton","visible":false,"position":"stackedBR"},{"element":"rightBox","visible":false,"position":"stackedBR"},{"element":"dateMenu","visible":false,"position":"stackedBR"},{"element":"systemMenu","visible":false,"position":"stackedBR"},{"element":"desktopButton","visible":false,"position":"stackedBR"}]}'
+        }
+    else:
+        return
 
     for k, v in d.items():
         val = f"'{v}'" if not v.isdigit() and v not in ['true', 'false'] else v
@@ -316,48 +349,197 @@ def _reload_kde_icons():
 
 
 def _configure_kde_panel(theme_id: str):
-    """Configure lower panel centering, floating dock, height, and launcher icon for KDE Plasma 6."""
-    script_cfg = os.path.expanduser("~/.config/plasma-org.kde.plasma.desktop-appletsrc")
-    if not os.path.exists(script_cfg):
-        return
+    """Configure authentic panels for KDE Plasma 6:
+    - mac: Top Apple Menu Bar (Kickoff + Global AppMenu + Tray + Clock) + Floating Centered Dock (IconTasks + Trash).
+    - aesthetic: Centered Floating Dock (height 44) with Tela icon.
+    - original: Flush Bottom Panel (height 44).
+    """
+    _setup_env()
 
-    if theme_id == "aesthetic":
-        launch_icon = "/usr/share/icons/Tela-circle-dark/scalable/apps/distributor-logo-debian.svg"
-        if not os.path.exists(launch_icon):
-            launch_icon = ""
-        applet_order = "201;112;114;202;116;130;131"
-        height = "44"
-        floating = "true"
-    else:  # original
-        launch_icon = ""
-        applet_order = "112;113;114;115;116;130;131"
-        height = "44"
-        floating = "false"
+    if theme_id == "mac":
+        apple_logo = get_asset_path("icons", "custom-launchers", "apple-logo.svg")
+        if not os.path.exists(apple_logo):
+            apple_logo = "/usr/share/icons/custom-launchers/apple-logo.svg"
 
-    # Stop plasmashell cleanly to update applet order and launcher icon
-    subprocess.call(["systemctl", "--user", "stop", "plasma-plasmashell"], stderr=subprocess.DEVNULL)
-    time.sleep(0.8)
-
-    # Update appletsrc
-    subprocess.call(["kwriteconfig6", "--file", "plasma-org.kde.plasma.desktop-appletsrc", "--group", "Containments", "--group", "111", "--group", "General", "--key", "AppletOrder", applet_order])
-    if launch_icon:
-        subprocess.call(["kwriteconfig6", "--file", "plasma-org.kde.plasma.desktop-appletsrc", "--group", "Containments", "--group", "111", "--group", "Applets", "--group", "112", "--group", "Configuration", "--group", "General", "--key", "icon", launch_icon])
-    else:
-        subprocess.call(["kwriteconfig6", "--file", "plasma-org.kde.plasma.desktop-appletsrc", "--group", "Containments", "--group", "111", "--group", "Applets", "--group", "112", "--group", "Configuration", "--group", "General", "--key", "icon", "--delete"])
-
-    # Restart plasmashell cleanly
-    subprocess.call(["systemctl", "--user", "start", "plasma-plasmashell"], stderr=subprocess.DEVNULL)
-    time.sleep(1.5)
-
-    # Set floating and height via evaluateScript
-    js = f"""
+        js = f"""
 var ps = panels();
+var primary = null;
+var extraPanels = [];
+
 for (var i = 0; i < ps.length; i++) {{
-    ps[i].height = {height};
-    ps[i].floating = {floating};
+    var ws = ps[i].widgets();
+    var hasTray = false;
+    for (var j = 0; j < ws.length; j++) {{
+        if (ws[j].type == "org.kde.plasma.systemtray") {{
+            hasTray = true;
+            break;
+        }}
+    }}
+    if (hasTray && !primary) {{
+        primary = ps[i];
+    }} else {{
+        extraPanels.push(ps[i]);
+    }}
+}}
+if (!primary && ps.length > 0) primary = ps[0];
+
+var launchers = "";
+for (var i = 0; i < extraPanels.length; i++) {{
+    var ews = extraPanels[i].widgets();
+    for (var j = 0; j < ews.length; j++) {{
+        if (ews[j].type == "org.kde.plasma.icontasks") {{
+            ews[j].currentConfigGroup = ["General"];
+            launchers = ews[j].readConfig("launchers");
+        }}
+    }}
+    extraPanels[i].remove();
+}}
+
+if (primary) {{
+    var ws = primary.widgets();
+    for (var i = 0; i < ws.length; i++) {{
+        if (ws[i].type == "org.kde.plasma.icontasks") {{
+            if (!launchers) {{
+                ws[i].currentConfigGroup = ["General"];
+                launchers = ws[i].readConfig("launchers");
+            }}
+            ws[i].remove();
+        }} else if (ws[i].type == "org.kde.plasma.pager" || ws[i].type == "org.kde.plasma.showdesktop") {{
+            ws[i].remove();
+        }} else if (ws[i].type == "org.kde.plasma.kickoff") {{
+            ws[i].currentConfigGroup = ["General"];
+            ws[i].writeConfig("icon", "{apple_logo}");
+        }}
+    }}
+
+    primary.location = "top";
+    primary.height = 30;
+    primary.floating = false;
+    primary.lengthMode = "fill";
+
+    var hasAppMenu = false;
+    var curWs = primary.widgets();
+    for (var i = 0; i < curWs.length; i++) {{
+        if (curWs[i].type == "org.kde.plasma.appmenu") {{
+            hasAppMenu = true;
+            break;
+        }}
+    }}
+    if (!hasAppMenu) {{
+        primary.addWidget("org.kde.plasma.appmenu");
+    }}
+
+    // Order top bar widgets: Apple Kickoff -> AppMenu -> Separator -> SystemTray -> Clock
+    var kickoffId = "";
+    var appmenuId = "";
+    var sepId = "";
+    var trayId = "";
+    var clockId = "";
+    var finalWs = primary.widgets();
+    for (var i = 0; i < finalWs.length; i++) {{
+        if (finalWs[i].type == "org.kde.plasma.kickoff") kickoffId = finalWs[i].id;
+        else if (finalWs[i].type == "org.kde.plasma.appmenu") appmenuId = finalWs[i].id;
+        else if (finalWs[i].type == "org.kde.plasma.marginsseparator" || finalWs[i].type == "org.kde.plasma.panelspacer") sepId = finalWs[i].id;
+        else if (finalWs[i].type == "org.kde.plasma.systemtray") trayId = finalWs[i].id;
+        else if (finalWs[i].type == "org.kde.plasma.digitalclock") clockId = finalWs[i].id;
+    }}
+    var orderList = [kickoffId, appmenuId, sepId, trayId, clockId].filter(function(x) {{ return x !== ""; }});
+    primary.currentConfigGroup = ["General"];
+    primary.writeConfig("AppletOrder", orderList.join(";"));
+    primary.reloadConfig();
+}}
+
+var dock = new Panel;
+dock.location = "bottom";
+dock.height = 60;
+dock.floating = true;
+dock.lengthMode = "fitContent";
+dock.alignment = "center";
+
+var dockTasks = dock.addWidget("org.kde.plasma.icontasks");
+if (launchers) {{
+    dockTasks.currentConfigGroup = ["General"];
+    dockTasks.writeConfig("launchers", launchers);
+}}
+dock.addWidget("org.kde.plasma.trash");
+"""
+        subprocess.call(["qdbus6", "org.kde.plasmashell", "/PlasmaShell", "evaluateScript", js], stderr=subprocess.DEVNULL)
+
+    elif theme_id == "aesthetic":
+        tela_logo = "/usr/share/icons/Tela-circle-dark/scalable/apps/distributor-logo-debian.svg"
+        if not os.path.exists(tela_logo):
+            tela_logo = ""
+
+        js = f"""
+var ps = panels();
+var primary = null;
+var extraPanels = [];
+for (var i = 0; i < ps.length; i++) {{
+    var ws = ps[i].widgets();
+    var hasTray = false;
+    for (var j = 0; j < ws.length; j++) {{
+        if (ws[j].type == "org.kde.plasma.systemtray") {{
+            hasTray = true;
+            break;
+        }}
+    }}
+    if (hasTray && !primary) {{
+        primary = ps[i];
+    }} else {{
+        extraPanels.push(ps[i]);
+    }}
+}}
+if (!primary && ps.length > 0) primary = ps[0];
+
+var launchers = "";
+for (var i = 0; i < extraPanels.length; i++) {{
+    var ews = extraPanels[i].widgets();
+    for (var j = 0; j < ews.length; j++) {{
+        if (ews[j].type == "org.kde.plasma.icontasks") {{
+            ews[j].currentConfigGroup = ["General"];
+            launchers = ews[j].readConfig("launchers");
+        }}
+    }}
+    extraPanels[i].remove();
+}}
+
+if (primary) {{
+    primary.location = "bottom";
+    primary.height = 44;
+    primary.floating = true;
+    primary.lengthMode = "fill";
+    primary.alignment = "center";
+
+    var hasTasks = false;
+    var ws = primary.widgets();
+    for (var i = 0; i < ws.length; i++) {{
+        if (ws[i].type == "org.kde.plasma.icontasks") {{
+            hasTasks = true;
+            if (launchers) {{
+                ws[i].currentConfigGroup = ["General"];
+                ws[i].writeConfig("launchers", launchers);
+            }}
+        }} else if (ws[i].type == "org.kde.plasma.appmenu") {{
+            ws[i].remove();
+        }} else if (ws[i].type == "org.kde.plasma.kickoff") {{
+            ws[i].currentConfigGroup = ["General"];
+            if ("{tela_logo}") {{
+                ws[i].writeConfig("icon", "{tela_logo}");
+            }} else {{
+                ws[i].writeConfig("icon", "");
+            }}
+        }}
+    }}
+    if (!hasTasks) {{
+        var t = primary.addWidget("org.kde.plasma.icontasks");
+        if (launchers) {{
+            t.currentConfigGroup = ["General"];
+            t.writeConfig("launchers", launchers);
+        }}
+    }}
 }}
 """
-    subprocess.call(["qdbus6", "org.kde.plasmashell", "/PlasmaShell", "evaluateScript", js], stderr=subprocess.DEVNULL)
+        subprocess.call(["qdbus6", "org.kde.plasmashell", "/PlasmaShell", "evaluateScript", js], stderr=subprocess.DEVNULL)
 
 
 def _apply_kde(theme_id: str) -> bool:
@@ -395,7 +577,10 @@ def _apply_kde(theme_id: str) -> bool:
     _configure_kde_panel(theme_id)
 
     # 7. Sync GSettings & GTK 3/4 settings for GTK apps running on KDE
-    gtk_layout = "appmenu:close"
+    if theme_id == "mac":
+        gtk_layout = "close,minimize,maximize:"
+    else:
+        gtk_layout = "appmenu:close"
 
     sync_gtk_settings(dark_mode=True, icon_theme=theme["icon_theme"], cursor_theme=theme["cursor_theme"], button_layout=gtk_layout)
     subprocess.call(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", "prefer-dark"], stderr=subprocess.DEVNULL)

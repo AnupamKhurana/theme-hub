@@ -8,6 +8,7 @@
 
 - **Handcrafted Environments**:
   - 🎨 **Modern Aesthetic**: Dark minimalist look with Inter typography, Tela Circle icons, floating centered dock, and Calm Night 4K wallpaper.
+  - 🍎 **macOS Sonoma Look**: Authentic macOS layout with Apple top menu bar, Global Application Menu, centered floating glass dock with pinned apps, WhiteSur icons, macOS cursor, and Sonoma 4K wallpaper.
   - 🔄 **Original Stock Defaults**: Safe, one-click restoration to default system settings without losing personal data or applications.
 - **Universal Desktop Environment Support**:
   - **GNOME Shell (46, 47, 48)**: Manages GSettings, window controls, wallpaper, Dash-to-Panel, and Ghostty terminal styling.
@@ -79,6 +80,9 @@ theme-hub-cli list
 
 # Apply Modern Aesthetic theme
 theme-hub-cli apply aesthetic
+
+# Apply macOS Sonoma Look
+theme-hub-cli apply mac
 
 # Revert to original stock desktop defaults
 theme-hub-cli revert
