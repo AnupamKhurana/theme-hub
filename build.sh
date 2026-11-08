@@ -48,11 +48,12 @@ cp "$SCRIPT_DIR/assets/branding/io.github.themehub.svg" "$BUILD_DIR/usr/share/ic
 cp "$SCRIPT_DIR/assets/branding/io.github.themehub.png" "$BUILD_DIR/usr/share/icons/hicolor/128x128/apps/"
 cp "$SCRIPT_DIR/assets/branding/io.github.themehub-64.png" "$BUILD_DIR/usr/share/icons/hicolor/64x64/apps/"
 
-# 6. Bundled Assets (Wallpapers, Cursors, Fonts, Icons)
+# 6. Bundled Assets (Wallpapers, Cursors, Fonts, Icons, Branding)
 cp -r "$SCRIPT_DIR/assets/backgrounds" "$BUILD_DIR/usr/share/theme-hub/"
 cp -r "$SCRIPT_DIR/assets/cursors" "$BUILD_DIR/usr/share/theme-hub/"
 cp -r "$SCRIPT_DIR/assets/fonts" "$BUILD_DIR/usr/share/theme-hub/"
 cp -r "$SCRIPT_DIR/assets/icons" "$BUILD_DIR/usr/share/theme-hub/"
+cp -r "$SCRIPT_DIR/assets/branding" "$BUILD_DIR/usr/share/theme-hub/"
 
 # 7. Build .deb package
 echo "Creating package with dpkg-deb..."

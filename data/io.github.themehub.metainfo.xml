@@ -8,12 +8,10 @@
   <description>
     <p>
       Theme Hub is a unified appearance switcher for Linux supporting GNOME and KDE Plasma.
-      It enables instant switching between four distinct desktop themes with a single click:
+      It enables instant switching between handcrafted desktop themes with a single click:
     </p>
     <ul>
       <li>Modern Aesthetic: Dark minimalist look with Inter fonts, Tela Circle icons, and floating dock.</li>
-      <li>Windows 11: Authentic Windows 11 style with Fluent icons, centered taskbar, and Bloom wallpaper.</li>
-      <li>macOS Sonoma: Sonoma 4K wallpapers, WhiteSur icons, traffic-light controls on left, and dock.</li>
       <li>Original Stock: Clean, safe, one-click restoration of default system settings.</li>
     </ul>
   </description>

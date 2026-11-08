@@ -1,15 +1,13 @@
 # Theme Hub 🎨
 
-**Theme Hub** is an all-in-one handcrafted desktop appearance studio and theme switcher for Linux. Built with modern GTK 4 and Libadwaita, it enables instant switching between four distinct desktop environments with a single click, complete with authentic wallpapers, icon suites, typography, floating docks, and titlebar window controls.
+**Theme Hub** is an all-in-one handcrafted desktop appearance studio and theme switcher for Linux. Built with modern GTK 4 and Libadwaita, it enables instant switching between handcrafted desktop environments with a single click, complete with authentic wallpapers, icon suites, typography, floating docks, and titlebar window controls.
 
 ---
 
 ## 🌟 Features
 
-- **Four Handcrafted Environments**:
+- **Handcrafted Environments**:
   - 🎨 **Modern Aesthetic**: Dark minimalist look with Inter typography, Tela Circle icons, floating centered dock, and Calm Night 4K wallpaper.
-  - 🪟 **Windows 11 Look**: Authentic Windows 11 Fluent look with Win11 icons, Bloom 4K wallpaper, right-aligned controls (`minimize,maximize,close`), and centered taskbar.
-  - 🍎 **macOS Sonoma Look**: Sonoma 4K wallpapers, WhiteSur icons, macOS traffic-light buttons on the left (`close,minimize,maximize`), and floating bottom dock with Launchpad.
   - 🔄 **Original Stock Defaults**: Safe, one-click restoration to default system settings without losing personal data or applications.
 - **Universal Desktop Environment Support**:
   - **GNOME Shell (46, 47, 48)**: Manages GSettings, window controls, wallpaper, Dash-to-Panel, and Ghostty terminal styling.
@@ -81,12 +79,6 @@ theme-hub-cli list
 
 # Apply Modern Aesthetic theme
 theme-hub-cli apply aesthetic
-
-# Apply Windows 11 Look
-theme-hub-cli apply windows
-
-# Apply macOS Sonoma Look
-theme-hub-cli apply mac
 
 # Revert to original stock desktop defaults
 theme-hub-cli revert

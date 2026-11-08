@@ -88,11 +88,7 @@ def get_current_theme() -> str:
                 ["gsettings", "get", "org.gnome.desktop.interface", "icon-theme"],
                 text=True
             ).strip()
-            if "Win11" in out:
-                return "windows"
-            elif "WhiteSur" in out:
-                return "mac"
-            elif "Tela" in out:
+            if "Tela" in out:
                 return "aesthetic"
             else:
                 return "original"
@@ -104,11 +100,7 @@ def get_current_theme() -> str:
                 ["kreadconfig6", "--file", "kdeglobals", "--group", "Icons", "--key", "Theme"],
                 text=True
             ).strip()
-            if "Win11" in out:
-                return "windows"
-            elif "WhiteSur" in out:
-                return "mac"
-            elif "Tela" in out:
+            if "Tela" in out:
                 return "aesthetic"
             else:
                 return "original"
@@ -250,91 +242,33 @@ def _apply_gnome(theme_id: str) -> bool:
 
 def _apply_dash_to_panel_gnome(theme_id: str):
     """Configure Dash-to-Panel extension for GNOME Shell."""
-    launchpad_icon = get_asset_path("icons", "custom-launchers", "macos-launchpad.svg")
-
-    if theme_id == "aesthetic":
-        d = {
-            'stockgs-keep-top-panel': 'false',
-            'panel-lengths': '{"AUO-0x00000000":100}',
-            'panel-sizes': '{"AUO-0x00000000":44}',
-            'panel-positions': '{"AUO-0x00000000":"BOTTOM"}',
-            'panel-anchors': '{"AUO-0x00000000":"MIDDLE"}',
-            'panel-top-bottom-margins': '6',
-            'panel-side-margins': '12',
-            'global-border-radius': '12',
-            'trans-use-custom-opacity': 'true',
-            'trans-panel-opacity': '0.85',
-            'trans-use-custom-bg': 'true',
-            'trans-bg-color': '#11141c',
-            'dot-style-focused': 'DOTS',
-            'dot-style-unfocused': 'DOTS',
-            'dot-color-dominant': 'true',
-            'dot-color-override': 'false',
-            'highlight-appicon-hover': 'true',
-            'highlight-appicon-hover-border-radius': '8',
-            'animate-appicon-hover': 'true',
-            'animate-appicon-hover-animation-type': 'RIPPLE',
-            'show-apps-icon-file': '',
-            'panel-element-positions': '{"AUO-0x00000000":[{"element":"showAppsButton","visible":true,"position":"stackedTL"},{"element":"leftBox","visible":true,"position":"stackedTL"},{"element":"taskbar","visible":true,"position":"centerMonitor"},{"element":"activitiesButton","visible":false,"position":"stackedBR"},{"element":"centerBox","visible":true,"position":"stackedBR"},{"element":"rightBox","visible":true,"position":"stackedBR"},{"element":"dateMenu","visible":true,"position":"stackedBR"},{"element":"systemMenu","visible":true,"position":"stackedBR"},{"element":"desktopButton","visible":false,"position":"stackedBR"}]}'
-        }
-    elif theme_id == "windows":
-        d = {
-            'stockgs-keep-top-panel': 'false',
-            'panel-lengths': '{"AUO-0x00000000":100}',
-            'panel-sizes': '{"AUO-0x00000000":48}',
-            'panel-positions': '{"AUO-0x00000000":"BOTTOM"}',
-            'panel-anchors': '{"AUO-0x00000000":"MIDDLE"}',
-            'panel-top-bottom-margins': '0',
-            'panel-side-margins': '0',
-            'global-border-radius': '0',
-            'trans-use-custom-opacity': 'true',
-            'trans-panel-opacity': '0.88',
-            'trans-use-custom-bg': 'true',
-            'trans-bg-color': '#1c1c1c',
-            'dot-style-focused': 'METRO',
-            'dot-style-unfocused': 'METRO',
-            'dot-size': '3',
-            'dot-position': 'BOTTOM',
-            'dot-color-dominant': 'false',
-            'dot-color-override': 'true',
-            'dot-color-unfocused-different': 'false',
-            'custom-color-dots': '#0078d4',
-            'highlight-appicon-hover': 'true',
-            'highlight-appicon-hover-border-radius': '4',
-            'animate-appicon-hover': 'true',
-            'animate-appicon-hover-animation-type': 'SIMPLE',
-            'show-apps-icon-file': '',
-            'panel-element-positions': '{"AUO-0x00000000":[{"element":"showAppsButton","visible":true,"position":"centerMonitor"},{"element":"taskbar","visible":true,"position":"centerMonitor"},{"element":"leftBox","visible":false,"position":"stackedTL"},{"element":"activitiesButton","visible":false,"position":"stackedTL"},{"element":"centerBox","visible":true,"position":"stackedBR"},{"element":"rightBox","visible":true,"position":"stackedBR"},{"element":"dateMenu","visible":true,"position":"stackedBR"},{"element":"systemMenu","visible":true,"position":"stackedBR"},{"element":"desktopButton","visible":true,"position":"stackedBR"}]}'
-        }
-    elif theme_id == "mac":
-        d = {
-            'stockgs-keep-top-panel': 'true',
-            'panel-lengths': '{"AUO-0x00000000":-1}',
-            'panel-sizes': '{"AUO-0x00000000":54}',
-            'panel-positions': '{"AUO-0x00000000":"BOTTOM"}',
-            'panel-anchors': '{"AUO-0x00000000":"MIDDLE"}',
-            'panel-top-bottom-margins': '10',
-            'panel-side-margins': '0',
-            'global-border-radius': '18',
-            'trans-use-custom-opacity': 'true',
-            'trans-panel-opacity': '0.60',
-            'trans-use-custom-bg': 'true',
-            'trans-bg-color': '#1e1e1e',
-            'dot-style-focused': 'DOTS',
-            'dot-style-unfocused': 'DOTS',
-            'dot-size': '4',
-            'dot-position': 'BOTTOM',
-            'dot-color-dominant': 'false',
-            'dot-color-override': 'false',
-            'highlight-appicon-hover': 'true',
-            'highlight-appicon-hover-border-radius': '10',
-            'animate-appicon-hover': 'true',
-            'animate-appicon-hover-animation-type': 'PLANK',
-            'show-apps-icon-file': launchpad_icon if os.path.exists(launchpad_icon) else '',
-            'panel-element-positions': '{"AUO-0x00000000":[{"element":"showAppsButton","visible":true,"position":"stackedTL"},{"element":"taskbar","visible":true,"position":"stackedTL"},{"element":"leftBox","visible":false,"position":"stackedTL"},{"element":"centerBox","visible":false,"position":"centered"},{"element":"activitiesButton","visible":false,"position":"stackedBR"},{"element":"rightBox","visible":false,"position":"stackedBR"},{"element":"dateMenu","visible":false,"position":"stackedBR"},{"element":"systemMenu","visible":false,"position":"stackedBR"},{"element":"desktopButton","visible":false,"position":"stackedBR"}]}'
-        }
-    else:
+    if theme_id != "aesthetic":
         return
+
+    d = {
+        'stockgs-keep-top-panel': 'false',
+        'panel-lengths': '{"AUO-0x00000000":100}',
+        'panel-sizes': '{"AUO-0x00000000":44}',
+        'panel-positions': '{"AUO-0x00000000":"BOTTOM"}',
+        'panel-anchors': '{"AUO-0x00000000":"MIDDLE"}',
+        'panel-top-bottom-margins': '6',
+        'panel-side-margins': '12',
+        'global-border-radius': '12',
+        'trans-use-custom-opacity': 'true',
+        'trans-panel-opacity': '0.85',
+        'trans-use-custom-bg': 'true',
+        'trans-bg-color': '#11141c',
+        'dot-style-focused': 'DOTS',
+        'dot-style-unfocused': 'DOTS',
+        'dot-color-dominant': 'true',
+        'dot-color-override': 'false',
+        'highlight-appicon-hover': 'true',
+        'highlight-appicon-hover-border-radius': '8',
+        'animate-appicon-hover': 'true',
+        'animate-appicon-hover-animation-type': 'RIPPLE',
+        'show-apps-icon-file': '',
+        'panel-element-positions': '{"AUO-0x00000000":[{"element":"showAppsButton","visible":true,"position":"stackedTL"},{"element":"leftBox","visible":true,"position":"stackedTL"},{"element":"taskbar","visible":true,"position":"centerMonitor"},{"element":"activitiesButton","visible":false,"position":"stackedBR"},{"element":"centerBox","visible":true,"position":"stackedBR"},{"element":"rightBox","visible":true,"position":"stackedBR"},{"element":"dateMenu","visible":true,"position":"stackedBR"},{"element":"systemMenu","visible":true,"position":"stackedBR"},{"element":"desktopButton","visible":false,"position":"stackedBR"}]}'
+    }
 
     for k, v in d.items():
         val = f"'{v}'" if not v.isdigit() and v not in ['true', 'false'] else v
@@ -387,21 +321,7 @@ def _configure_kde_panel(theme_id: str):
     if not os.path.exists(script_cfg):
         return
 
-    if theme_id == "windows":
-        launch_icon = "/usr/share/icons/custom-launchers/windows11-start.svg"
-        if not os.path.exists(launch_icon):
-            launch_icon = "/usr/share/icons/Win11-dark/apps/scalable/distributor-logo-windows.svg"
-        applet_order = "201;112;114;202;116;130;131"
-        height = "48"
-        floating = "false"
-    elif theme_id == "mac":
-        launch_icon = "/usr/share/icons/custom-launchers/macos-launchpad.svg"
-        if not os.path.exists(launch_icon):
-            launch_icon = "/usr/share/icons/WhiteSur-dark/apps/scalable/distributor-logo-apple.svg"
-        applet_order = "201;112;114;202;116;130;131"
-        height = "54"
-        floating = "true"
-    elif theme_id == "aesthetic":
+    if theme_id == "aesthetic":
         launch_icon = "/usr/share/icons/Tela-circle-dark/scalable/apps/distributor-logo-debian.svg"
         if not os.path.exists(launch_icon):
             launch_icon = ""
@@ -475,12 +395,7 @@ def _apply_kde(theme_id: str) -> bool:
     _configure_kde_panel(theme_id)
 
     # 7. Sync GSettings & GTK 3/4 settings for GTK apps running on KDE
-    if theme_id == "mac":
-        gtk_layout = "close,minimize,maximize:"
-    elif theme_id == "windows":
-        gtk_layout = ":minimize,maximize,close"
-    else:
-        gtk_layout = "appmenu:close"
+    gtk_layout = "appmenu:close"
 
     sync_gtk_settings(dark_mode=True, icon_theme=theme["icon_theme"], cursor_theme=theme["cursor_theme"], button_layout=gtk_layout)
     subprocess.call(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", "prefer-dark"], stderr=subprocess.DEVNULL)
