@@ -1,0 +1,39 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    configure)
+        # Update desktop database
+        if which update-desktop-database >/dev/null 2>&1; then
+            update-desktop-database -q /usr/share/applications || true
+        fi
+
+        # Update icon caches
+        if which gtk-update-icon-cache >/dev/null 2>&1; then
+            gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+        fi
+
+        # Link/register fonts if bundled
+        if [ -d "/usr/share/theme-hub/fonts" ]; then
+            mkdir -p /usr/share/fonts/truetype/theme-hub
+            cp -rn /usr/share/theme-hub/fonts/* /usr/share/fonts/truetype/theme-hub/ 2>/dev/null || true
+            fc-cache -f /usr/share/fonts/truetype/theme-hub 2>/dev/null || true
+        fi
+
+        # Link icon suites to /usr/share/icons if present
+        for icon_suite in Tela-circle-dark Win11-dark WhiteSur-dark; do
+            if [ -d "/usr/share/theme-hub/icons/$icon_suite" ] && [ ! -d "/usr/share/icons/$icon_suite" ]; then
+                ln -sf "/usr/share/theme-hub/icons/$icon_suite" "/usr/share/icons/$icon_suite" 2>/dev/null || true
+            fi
+        done
+
+        # Link cursors
+        for cur in Bibata-Modern-Classic macOS; do
+            if [ -d "/usr/share/theme-hub/cursors/$cur" ] && [ ! -d "/usr/share/icons/$cur" ]; then
+                ln -sf "/usr/share/theme-hub/cursors/$cur" "/usr/share/icons/$cur" 2>/dev/null || true
+            fi
+        done
+        ;;
+esac
+
+exit 0

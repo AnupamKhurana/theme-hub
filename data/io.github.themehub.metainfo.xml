@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.themehub</id>
+  <metadata_license>MIT</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Theme Hub</name>
+  <summary>Handcrafted desktop themes and look-and-feel switcher for Linux</summary>
+  <description>
+    <p>
+      Theme Hub is a unified appearance switcher for Linux supporting GNOME and KDE Plasma.
+      It enables instant switching between four distinct desktop themes with a single click:
+    </p>
+    <ul>
+      <li>Modern Aesthetic: Dark minimalist look with Inter fonts, Tela Circle icons, and floating dock.</li>
+      <li>Windows 11: Authentic Windows 11 style with Fluent icons, centered taskbar, and Bloom wallpaper.</li>
+      <li>macOS Sonoma: Sonoma 4K wallpapers, WhiteSur icons, traffic-light controls on left, and dock.</li>
+      <li>Original Stock: Clean, safe, one-click restoration of default system settings.</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">io.github.themehub.desktop</launchable>
+  <provides>
+    <binary>theme-hub</binary>
+    <binary>theme-hub-cli</binary>
+  </provides>
+  <categories>
+    <category>Settings</category>
+    <category>DesktopSettings</category>
+    <category>Utility</category>
+  </categories>
+</component>

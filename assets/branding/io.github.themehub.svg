@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1e2e" />
+      <stop offset="100%" stop-color="#11111b" />
+    </linearGradient>
+
+    <!-- Theme Segment Gradients -->
+    <linearGradient id="aesthetic-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3584e4" />
+      <stop offset="100%" stop-color="#1c71d8" />
+    </linearGradient>
+
+    <linearGradient id="win-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0078d4" />
+      <stop offset="100%" stop-color="#005a9e" />
+    </linearGradient>
+
+    <linearGradient id="mac-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f6d32d" />
+      <stop offset="100%" stop-color="#e5a50a" />
+    </linearGradient>
+
+    <linearGradient id="deb-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff7800" />
+      <stop offset="100%" stop-color="#e01b24" />
+    </linearGradient>
+
+    <!-- Drop Shadow Filter -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Squircle Base Frame -->
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="url(#bg-grad)" stroke="#313244" stroke-width="2" filter="url(#shadow)" />
+
+  <!-- Inner Display Frame -->
+  <rect x="18" y="18" width="92" height="72" rx="10" fill="#181825" stroke="#45475a" stroke-width="1.5" />
+
+  <!-- 4-Quadrant Themes Preview -->
+  <!-- Top Left: Aesthetic Modern Dark -->
+  <path d="M 20 28 A 8 8 0 0 1 28 20 L 63 20 L 63 53 L 20 53 Z" fill="url(#aesthetic-grad)" opacity="0.9" />
+  <circle cx="32" cy="30" r="3" fill="#ffffff" opacity="0.8" />
+  <rect x="38" y="28" width="16" height="4" rx="2" fill="#ffffff" opacity="0.6" />
+
+  <!-- Top Right: Windows 11 Fluent Bloom -->
+  <path d="M 65 20 L 100 20 A 8 8 0 0 1 108 28 L 108 53 L 65 53 Z" fill="url(#win-grad)" opacity="0.9" />
+  <rect x="74" y="27" width="6" height="6" fill="#ffffff" opacity="0.8" />
+  <rect x="82" y="27" width="6" height="6" fill="#ffffff" opacity="0.8" />
+  <rect x="74" y="35" width="6" height="6" fill="#ffffff" opacity="0.8" />
+  <rect x="82" y="35" width="6" height="6" fill="#ffffff" opacity="0.8" />
+
+  <!-- Bottom Left: macOS Sonoma Traffic Lights -->
+  <path d="M 20 55 L 63 55 L 63 88 L 28 88 A 8 8 0 0 1 20 80 Z" fill="url(#mac-grad)" opacity="0.9" />
+  <circle cx="28" cy="63" r="2.5" fill="#ed333b" />
+  <circle cx="35" cy="63" r="2.5" fill="#f6d32d" />
+  <circle cx="42" cy="63" r="2.5" fill="#57e389" />
+
+  <!-- Bottom Right: Debian Stock Original -->
+  <path d="M 65 55 L 108 55 L 108 80 A 8 8 0 0 1 100 88 L 65 88 Z" fill="url(#deb-grad)" opacity="0.9" />
+  <circle cx="86" cy="71" r="7" fill="none" stroke="#ffffff" stroke-width="2" stroke-dasharray="3,2" />
+
+  <!-- Floating Centered Dock / Stand Indicator -->
+  <rect x="42" y="78" width="44" height="8" rx="4" fill="#ffffff" opacity="0.9" filter="url(#shadow)" />
+  <circle cx="48" cy="82" r="2" fill="#1e1e2e" />
+  <circle cx="56" cy="82" r="2" fill="#1e1e2e" />
+  <circle cx="64" cy="82" r="2" fill="#1e1e2e" />
+  <circle cx="72" cy="82" r="2" fill="#1e1e2e" />
+  <circle cx="80" cy="82" r="2" fill="#1e1e2e" />
+
+  <!-- Monitor Stand Base -->
+  <path d="M 58 90 L 70 90 L 74 104 L 54 104 Z" fill="#313244" />
+  <rect x="46" y="104" width="36" height="4" rx="2" fill="#45475a" />
+</svg>

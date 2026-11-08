@@ -1,0 +1,17 @@
+Package: theme-hub
+Version: 1.0.0
+Section: utils
+Priority: optional
+Architecture: all
+Maintainer: Antigravity Studio <anupamkhurana@gmail.com>
+Depends: python3, python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1, dconf-gsettings-backend | dconf-cli, libglib2.0-bin
+Recommends: gnome-shell-extension-dash-to-panel, libnotify-bin
+Homepage: https://github.com/anupam/theme-hub
+Description: Handcrafted Linux Desktop Appearance Studio
+ Theme Hub is an appearance switcher for Linux supporting GNOME and KDE Plasma.
+ It allows seamless switching between 4 distinct themes:
+  - Modern Aesthetic (Tela Circle, Inter, Floating Dock, Calm Night)
+  - Windows 11 Look (Bloom 4K, Win11 Fluent Icons, Centered Taskbar)
+  - macOS Sonoma Look (Sonoma 4K, WhiteSur Icons, Left Window Controls)
+  - Stock Original Defaults (Instant safe restoration)
+ Includes full GTK4/Libadwaita GUI and CLI interface.

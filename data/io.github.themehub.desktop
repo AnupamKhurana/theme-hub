@@ -1,0 +1,29 @@
+[Desktop Entry]
+Name=Theme Hub
+Comment=Switch seamlessly between handcrafted Linux desktop appearances or revert anytime
+GenericName=Appearance & Theme Studio
+Exec=theme-hub
+Icon=io.github.themehub
+Terminal=false
+Type=Application
+Categories=Settings;DesktopSettings;Utility;
+Keywords=theme;appearance;windows;mac;aesthetic;gnome;kde;plasma;wallpaper;dark-mode;
+StartupNotify=true
+StartupWMClass=io.github.themehub
+Actions=Aesthetic;Windows;Mac;Revert;
+
+[Desktop Action Aesthetic]
+Name=Apply Modern Aesthetic Theme
+Exec=theme-hub-cli apply aesthetic
+
+[Desktop Action Windows]
+Name=Apply Windows 11 Look
+Exec=theme-hub-cli apply windows
+
+[Desktop Action Mac]
+Name=Apply macOS Sonoma Look
+Exec=theme-hub-cli apply mac
+
+[Desktop Action Revert]
+Name=Revert to Stock Defaults
+Exec=theme-hub-cli revert

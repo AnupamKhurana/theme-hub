@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+"""Command Line Interface for Theme Hub."""
+import sys
+import os
+import argparse
+
+# Insert src directory into python path if running in-place
+src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if src_dir not in sys.path:
+    sys.path.insert(0, src_dir)
+
+from theme_hub.config import THEMES, APP_NAME, APP_VERSION
+from theme_hub.backend import (
+    detect_desktop_environment,
+    detect_display_server,
+    get_current_theme,
+    apply_theme
+)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="theme-hub-cli",
+        description=f"{APP_NAME} CLI - Instant theme switcher for Linux desktops"
+    )
+    parser.add_argument("--version", action="version", version=f"{APP_NAME} {APP_VERSION}")
+
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # list
+    subparsers.add_parser("list", help="List all available handcrafted themes")
+
+    # current
+    subparsers.add_parser("current", help="Show currently active theme")
+
+    # apply
+    apply_parser = subparsers.add_parser("apply", help="Apply a theme")
+    apply_parser.add_argument("theme", choices=[t["id"] for t in THEMES], help="Theme ID to apply")
+
+    # revert
+    subparsers.add_parser("revert", help="Revert to original stock desktop defaults")
+
+    # info
+    subparsers.add_parser("info", help="Display desktop environment and display system info")
+
+    args = parser.parse_args()
+
+    if not args.command:
+        parser.print_help()
+        sys.exit(0)
+
+    if args.command == "list":
+        current = get_current_theme()
+        print(f"\n{APP_NAME} - Available Themes:\n" + "-" * 50)
+        for t in THEMES:
+            active_marker = " [ACTIVE]" if t["id"] == current else ""
+            print(f" • {t['id']:<10} : {t['title']}{active_marker}")
+            print(f"   {t['subtitle']}\n")
+
+    elif args.command == "current":
+        current = get_current_theme()
+        theme_title = next((t["title"] for t in THEMES if t["id"] == current), current)
+        print(f"Current theme: {theme_title} ({current})")
+
+    elif args.command == "apply":
+        theme_id = args.theme
+        theme_title = next((t["title"] for t in THEMES if t["id"] == theme_id), theme_id)
+        print(f"Applying theme '{theme_title}'...")
+        if apply_theme(theme_id):
+            print(f"✓ Successfully applied '{theme_title}'!")
+        else:
+            print(f"✗ Failed to apply theme '{theme_title}'.")
+            sys.exit(1)
+
+    elif args.command == "revert":
+        print("Reverting desktop to original system defaults...")
+        if apply_theme("original"):
+            print("✓ Successfully reverted to stock defaults!")
+        else:
+            print("✗ Failed to revert to stock defaults.")
+            sys.exit(1)
+
+    elif args.command == "info":
+        de = detect_desktop_environment().upper()
+        ds = detect_display_server()
+        current = get_current_theme()
+        print(f"\n{APP_NAME} System Diagnostics:")
+        print(f" • Desktop Environment : {de}")
+        print(f" • Display Server      : {ds}")
+        print(f" • Active Theme        : {current}")
+        print(f" • Version             : {APP_VERSION}\n")
+
+
+if __name__ == "__main__":
+    main()

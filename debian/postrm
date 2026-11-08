@@ -1,0 +1,27 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    remove|purge)
+        rm -rf /usr/share/fonts/truetype/theme-hub 2>/dev/null || true
+        for icon_suite in Tela-circle-dark Win11-dark WhiteSur-dark Bibata-Modern-Classic macOS; do
+            if [ -L "/usr/share/icons/$icon_suite" ]; then
+                rm -f "/usr/share/icons/$icon_suite" 2>/dev/null || true
+            fi
+        done
+
+        if which update-desktop-database >/dev/null 2>&1; then
+            update-desktop-database -q /usr/share/applications || true
+        fi
+
+        if which gtk-update-icon-cache >/dev/null 2>&1; then
+            gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+        fi
+
+        if which fc-cache >/dev/null 2>&1; then
+            fc-cache -f || true
+        fi
+        ;;
+esac
+
+exit 0
