@@ -381,6 +381,65 @@ def _reload_kde_icons():
     subprocess.call(["kbuildsycoca6", "--noincremental"], stderr=subprocess.DEVNULL)
 
 
+def _configure_kde_panel(theme_id: str):
+    """Configure lower panel centering, floating dock, height, and launcher icon for KDE Plasma 6."""
+    script_cfg = os.path.expanduser("~/.config/plasma-org.kde.plasma.desktop-appletsrc")
+    if not os.path.exists(script_cfg):
+        return
+
+    if theme_id == "windows":
+        launch_icon = "/usr/share/icons/custom-launchers/windows11-start.svg"
+        if not os.path.exists(launch_icon):
+            launch_icon = "/usr/share/icons/Win11-dark/apps/scalable/distributor-logo-windows.svg"
+        applet_order = "201;112;114;202;116;130;131"
+        height = "48"
+        floating = "false"
+    elif theme_id == "mac":
+        launch_icon = "/usr/share/icons/custom-launchers/macos-launchpad.svg"
+        if not os.path.exists(launch_icon):
+            launch_icon = "/usr/share/icons/WhiteSur-dark/apps/scalable/distributor-logo-apple.svg"
+        applet_order = "201;112;114;202;116;130;131"
+        height = "54"
+        floating = "true"
+    elif theme_id == "aesthetic":
+        launch_icon = "/usr/share/icons/Tela-circle-dark/scalable/apps/distributor-logo-debian.svg"
+        if not os.path.exists(launch_icon):
+            launch_icon = ""
+        applet_order = "201;112;114;202;116;130;131"
+        height = "44"
+        floating = "true"
+    else:  # original
+        launch_icon = ""
+        applet_order = "112;113;114;115;116;130;131"
+        height = "44"
+        floating = "false"
+
+    # Stop plasmashell cleanly to update applet order and launcher icon
+    subprocess.call(["systemctl", "--user", "stop", "plasma-plasmashell"], stderr=subprocess.DEVNULL)
+    time.sleep(0.8)
+
+    # Update appletsrc
+    subprocess.call(["kwriteconfig6", "--file", "plasma-org.kde.plasma.desktop-appletsrc", "--group", "Containments", "--group", "111", "--group", "General", "--key", "AppletOrder", applet_order])
+    if launch_icon:
+        subprocess.call(["kwriteconfig6", "--file", "plasma-org.kde.plasma.desktop-appletsrc", "--group", "Containments", "--group", "111", "--group", "Applets", "--group", "112", "--group", "Configuration", "--group", "General", "--key", "icon", launch_icon])
+    else:
+        subprocess.call(["kwriteconfig6", "--file", "plasma-org.kde.plasma.desktop-appletsrc", "--group", "Containments", "--group", "111", "--group", "Applets", "--group", "112", "--group", "Configuration", "--group", "General", "--key", "icon", "--delete"])
+
+    # Restart plasmashell cleanly
+    subprocess.call(["systemctl", "--user", "start", "plasma-plasmashell"], stderr=subprocess.DEVNULL)
+    time.sleep(1.5)
+
+    # Set floating and height via evaluateScript
+    js = f"""
+var ps = panels();
+for (var i = 0; i < ps.length; i++) {{
+    ps[i].height = {height};
+    ps[i].floating = {floating};
+}}
+"""
+    subprocess.call(["qdbus6", "org.kde.plasmashell", "/PlasmaShell", "evaluateScript", js], stderr=subprocess.DEVNULL)
+
+
 def _apply_kde(theme_id: str) -> bool:
     """Apply theme settings for KDE Plasma 6 cleanly without killing plasmashell."""
     _setup_env()
@@ -412,7 +471,10 @@ def _apply_kde(theme_id: str) -> bool:
         wall_path = get_asset_path(*theme.get("wallpaper_dark", ("backgrounds", "aesthetic", "calm-night.png")))
     subprocess.call(["plasma-apply-wallpaperimage", wall_path], stderr=subprocess.DEVNULL)
 
-    # 6. Sync GSettings & GTK 3/4 settings for GTK apps running on KDE
+    # 6. Configure Lower Panel (Centering, Height, Floating, Start Icon)
+    _configure_kde_panel(theme_id)
+
+    # 7. Sync GSettings & GTK 3/4 settings for GTK apps running on KDE
     if theme_id == "mac":
         gtk_layout = "close,minimize,maximize:"
     elif theme_id == "windows":
@@ -520,6 +582,16 @@ def _revert_kde() -> bool:
     if res != 0:
         subprocess.call(["plasma-apply-desktoptheme", "breeze-light"], stderr=subprocess.DEVNULL)
 
+    # Reset panel geometry to stock Debian flush dock
+    js = """
+var ps = panels();
+for (var i = 0; i < ps.length; i++) {
+    ps[i].height = 44;
+    ps[i].floating = false;
+}
+"""
+    subprocess.call(["qdbus6", "org.kde.plasmashell", "/PlasmaShell", "evaluateScript", js], stderr=subprocess.DEVNULL)
+
     # 6. Revert GTK & GSettings
     sync_gtk_settings(dark_mode=False, icon_theme="breeze", cursor_theme="breeze_cursors", button_layout="appmenu:close")
     subprocess.call(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", "default"], stderr=subprocess.DEVNULL)
@@ -540,7 +612,14 @@ def _revert_generic() -> bool:
 
 
 def notify_user(title: str, message: str):
-    """Deliver a native desktop notification."""
+    """Deliver a native desktop notification asynchronously without blocking."""
     icon_path = get_asset_path("branding", "io.github.themehub.png")
     icon_arg = f"--icon={icon_path}" if os.path.exists(icon_path) else "--icon=preferences-desktop-theme"
-    subprocess.call(["notify-send", title, message, icon_arg], stderr=subprocess.DEVNULL)
+    try:
+        subprocess.Popen(
+            ["notify-send", "-t", "3000", title, message, icon_arg],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+    except Exception:
+        pass
