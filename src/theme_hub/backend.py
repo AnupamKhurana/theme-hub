@@ -369,6 +369,18 @@ gtk-titlebar = true
         pass
 
 
+def _reload_kde_icons():
+    """Trigger KDE Frameworks 6 to immediately reload all icon loaders and caches."""
+    try:
+        import ctypes
+        kf6 = ctypes.CDLL("libKF6IconThemes.so.6")
+        kf6._ZN11KIconLoader10emitChangeENS_5GroupE(0)
+    except Exception:
+        pass
+    subprocess.call(["dbus-send", "--type=signal", "--session", "/KIconLoader", "org.kde.KIconLoader.iconChanged", "int32:0"], stderr=subprocess.DEVNULL)
+    subprocess.call(["kbuildsycoca6", "--noincremental"], stderr=subprocess.DEVNULL)
+
+
 def _apply_kde(theme_id: str) -> bool:
     """Apply theme settings for KDE Plasma 6 cleanly without killing plasmashell."""
     _setup_env()
@@ -417,8 +429,7 @@ def _apply_kde(theme_id: str) -> bool:
 
     # 7. Live KWin & DBus reload
     subprocess.call(["qdbus6", "org.kde.KWin", "/KWin", "reconfigure"], stderr=subprocess.DEVNULL)
-    subprocess.call(["dbus-send", "--type=signal", "--session", "/KIconLoader", "org.kde.KIconLoader.iconChanged", "int32:0"], stderr=subprocess.DEVNULL)
-    subprocess.call(["kbuildsycoca6", "--noincremental"], stderr=subprocess.DEVNULL)
+    _reload_kde_icons()
 
     return True
 
@@ -518,8 +529,7 @@ def _revert_kde() -> bool:
     subprocess.call(["gsettings", "set", "org.gnome.desktop.wm.preferences", "button-layout", "appmenu:close"], stderr=subprocess.DEVNULL)
 
     # 7. Broadcast changes & sycoca reload
-    subprocess.call(["dbus-send", "--type=signal", "--session", "/KIconLoader", "org.kde.KIconLoader.iconChanged", "int32:0"], stderr=subprocess.DEVNULL)
-    subprocess.call(["kbuildsycoca6", "--noincremental"], stderr=subprocess.DEVNULL)
+    _reload_kde_icons()
     return True
 
 

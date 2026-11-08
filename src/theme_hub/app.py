@@ -188,7 +188,7 @@ class ThemeHubApp(Adw.Application):
         )
 
     def do_startup(self):
-        super().do_startup()
+        Adw.Application.do_startup(self)
         display = Gdk.Display.get_default()
         if display:
             css_provider = Gtk.CssProvider()
@@ -200,6 +200,7 @@ class ThemeHubApp(Adw.Application):
             )
 
     def do_activate(self):
+        Adw.Application.do_activate(self)
         win = self.props.active_window
         if not win:
             win = ThemeHubWindow(application=self)
