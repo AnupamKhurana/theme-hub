@@ -33,11 +33,17 @@ def resolve_asset_dir():
 ASSET_DIR = resolve_asset_dir()
 
 def get_asset_path(*parts):
-    """Resolve a specific asset file path."""
+    """Resolve a specific asset file path across installed and development locations."""
+    # Check ASSET_DIR first
     primary = os.path.join(ASSET_DIR, *parts)
     if os.path.exists(primary):
         return primary
-    
+
+    # Check local development repository assets
+    repo_asset = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "assets", *parts))
+    if os.path.exists(repo_asset):
+        return repo_asset
+
     # Check legacy user home locations (~/.local/share/backgrounds/...)
     if parts[0] == "backgrounds" and len(parts) >= 3:
         legacy = os.path.expanduser(f"~/.local/share/backgrounds/{parts[1]}/{parts[2]}")
@@ -45,6 +51,10 @@ def get_asset_path(*parts):
             return legacy
     elif parts[0] == "icons" and len(parts) >= 2:
         legacy = os.path.expanduser(f"~/.local/share/icons/{'/'.join(parts[1:])}")
+        if os.path.exists(legacy):
+            return legacy
+    elif parts[0] == "plasma" and len(parts) >= 2:
+        legacy = os.path.expanduser(f"~/.local/share/plasma/{'/'.join(parts[1:])}")
         if os.path.exists(legacy):
             return legacy
 

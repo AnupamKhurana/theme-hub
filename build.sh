@@ -42,18 +42,21 @@ find "$BUILD_DIR/usr/lib/python3/dist-packages/theme_hub" -type f -name "*.pyc" 
 # 4. Desktop entry & AppStream
 cp "$SCRIPT_DIR/data/io.github.themehub.desktop" "$BUILD_DIR/usr/share/applications/"
 cp "$SCRIPT_DIR/data/io.github.themehub.metainfo.xml" "$BUILD_DIR/usr/share/metainfo/"
+[ -f "$SCRIPT_DIR/data/launchpad.desktop" ] && cp "$SCRIPT_DIR/data/launchpad.desktop" "$BUILD_DIR/usr/share/applications/"
 
 # 5. Icons
 cp "$SCRIPT_DIR/assets/branding/io.github.themehub.svg" "$BUILD_DIR/usr/share/icons/hicolor/scalable/apps/"
 cp "$SCRIPT_DIR/assets/branding/io.github.themehub.png" "$BUILD_DIR/usr/share/icons/hicolor/128x128/apps/"
 cp "$SCRIPT_DIR/assets/branding/io.github.themehub-64.png" "$BUILD_DIR/usr/share/icons/hicolor/64x64/apps/"
+[ -f "$SCRIPT_DIR/assets/icons/custom-launchers/macos-launchpad.svg" ] && cp "$SCRIPT_DIR/assets/icons/custom-launchers/macos-launchpad.svg" "$BUILD_DIR/usr/share/icons/hicolor/scalable/apps/macos-launchpad.svg"
 
-# 6. Bundled Assets (Wallpapers, Cursors, Fonts, Icons, Branding)
+# 6. Bundled Assets (Wallpapers, Cursors, Fonts, Icons, Branding, Plasma Styles)
 cp -r "$SCRIPT_DIR/assets/backgrounds" "$BUILD_DIR/usr/share/theme-hub/"
 cp -r "$SCRIPT_DIR/assets/cursors" "$BUILD_DIR/usr/share/theme-hub/"
 cp -r "$SCRIPT_DIR/assets/fonts" "$BUILD_DIR/usr/share/theme-hub/"
 cp -r "$SCRIPT_DIR/assets/icons" "$BUILD_DIR/usr/share/theme-hub/"
 cp -r "$SCRIPT_DIR/assets/branding" "$BUILD_DIR/usr/share/theme-hub/"
+[ -d "$SCRIPT_DIR/assets/plasma" ] && cp -r "$SCRIPT_DIR/assets/plasma" "$BUILD_DIR/usr/share/theme-hub/"
 
 # 7. Build .deb package
 echo "Creating package with dpkg-deb..."

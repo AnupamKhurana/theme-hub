@@ -205,6 +205,9 @@ def _apply_gnome(theme_id: str) -> bool:
     if not theme:
         return False
 
+    if theme_id == "mac":
+        ensure_whitesur_icons()
+
     # 1. Dark mode & Themes
     subprocess.call(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", "prefer-dark"])
     subprocess.call(["gsettings", "set", "org.gnome.desktop.interface", "accent-color", theme.get("accent_name", "blue")])
@@ -348,9 +351,64 @@ def _reload_kde_icons():
     subprocess.call(["kbuildsycoca6", "--noincremental"], stderr=subprocess.DEVNULL)
 
 
+def ensure_whitesur_icons():
+    """Ensure WhiteSur-dark icon theme with all scalable application icons is present and valid."""
+    user_icon_theme = os.path.expanduser("~/.local/share/icons/WhiteSur-dark")
+    scalable_check = os.path.join(user_icon_theme, "apps", "scalable")
+    # If scalable dir is missing or is a broken symlink, sync complete bundled icons
+    if not os.path.exists(user_icon_theme) or not os.path.isdir(scalable_check) or os.path.islink(scalable_check):
+        bundled_icons = get_asset_path("icons", "WhiteSur-dark")
+        if os.path.exists(bundled_icons):
+            os.makedirs(os.path.dirname(user_icon_theme), exist_ok=True)
+            if os.path.exists(user_icon_theme):
+                if os.path.islink(user_icon_theme):
+                    os.unlink(user_icon_theme)
+                else:
+                    shutil.rmtree(user_icon_theme)
+            shutil.copytree(bundled_icons, user_icon_theme, symlinks=True)
+            subprocess.call(["gtk-update-icon-cache", "-f", "-t", user_icon_theme], stderr=subprocess.DEVNULL)
+
+
+def ensure_kde_plasma_theme():
+    """Ensure WhiteSur-dark plasma desktop theme is installed in user's plasma directory."""
+    user_theme_dir = os.path.expanduser("~/.local/share/plasma/desktoptheme/WhiteSur-dark")
+    if not os.path.exists(user_theme_dir):
+        bundled_theme = get_asset_path("plasma", "desktoptheme", "WhiteSur-dark")
+        if os.path.exists(bundled_theme):
+            os.makedirs(os.path.dirname(user_theme_dir), exist_ok=True)
+            shutil.copytree(bundled_theme, user_theme_dir)
+
+
+def ensure_launchpad_desktop():
+    """Ensure Launchpad desktop entry and icon are installed for the dock."""
+    user_icon_dir = os.path.expanduser("~/.local/share/icons/hicolor/scalable/apps")
+    os.makedirs(user_icon_dir, exist_ok=True)
+    dst_icon = os.path.join(user_icon_dir, "macos-launchpad.svg")
+    if not os.path.exists(dst_icon):
+        src_icon = get_asset_path("icons", "custom-launchers", "macos-launchpad.svg")
+        if os.path.exists(src_icon):
+            shutil.copy2(src_icon, dst_icon)
+
+    user_app_dir = os.path.expanduser("~/.local/share/applications")
+    os.makedirs(user_app_dir, exist_ok=True)
+    dst_desktop = os.path.join(user_app_dir, "launchpad.desktop")
+    if not os.path.exists(dst_desktop):
+        content = """[Desktop Entry]
+Name=Launchpad
+Comment=Open Application Launcher
+Exec=qdbus6 org.kde.plasmashell /PlasmaShell activateLauncherMenu
+Icon=macos-launchpad
+Terminal=false
+Type=Application
+Categories=System;Utility;
+"""
+        with open(dst_desktop, "w") as f:
+            f.write(content)
+
+
 def _configure_kde_panel(theme_id: str):
     """Configure authentic panels for KDE Plasma 6:
-    - mac: Top Apple Menu Bar (Kickoff + Global AppMenu + Tray + Clock) + Floating Centered Dock (IconTasks + Trash).
+    - mac: Top Apple Menu Bar (Kickoff + Global AppMenu + Spacer + Tray + Clock) + Floating Centered Glass Dock (Launchpad + IconTasks + Separator + Trash) with dodge windows.
     - aesthetic: Centered Floating Dock (height 44) with Tela icon.
     - original: Flush Bottom Panel (height 44).
     """
@@ -417,50 +475,68 @@ if (primary) {{
     primary.floating = false;
     primary.lengthMode = "fill";
 
-    var hasAppMenu = false;
+    var appmenuWidget = null;
+    var kickoffWidget = null;
+    var trayWidget = null;
+    var clockWidget = null;
+    var spacerWidget = null;
     var curWs = primary.widgets();
     for (var i = 0; i < curWs.length; i++) {{
-        if (curWs[i].type == "org.kde.plasma.appmenu") {{
-            hasAppMenu = true;
-            break;
+        if (curWs[i].type == "org.kde.plasma.appmenu") appmenuWidget = curWs[i];
+        else if (curWs[i].type == "org.kde.plasma.kickoff") kickoffWidget = curWs[i];
+        else if (curWs[i].type == "org.kde.plasma.systemtray") trayWidget = curWs[i];
+        else if (curWs[i].type == "org.kde.plasma.digitalclock") clockWidget = curWs[i];
+        else if (curWs[i].type == "org.kde.plasma.panelspacer") {{
+            if (!spacerWidget) spacerWidget = curWs[i];
+            else curWs[i].remove();
         }}
+        else if (curWs[i].type == "org.kde.plasma.marginsseparator") curWs[i].remove();
     }}
-    if (!hasAppMenu) {{
-        primary.addWidget("org.kde.plasma.appmenu");
+    if (!appmenuWidget) {{
+        appmenuWidget = primary.addWidget("org.kde.plasma.appmenu");
     }}
 
-    // Order top bar widgets: Apple Kickoff -> AppMenu -> Separator -> SystemTray -> Clock
-    var kickoffId = "";
-    var appmenuId = "";
-    var sepId = "";
-    var trayId = "";
-    var clockId = "";
-    var finalWs = primary.widgets();
-    for (var i = 0; i < finalWs.length; i++) {{
-        if (finalWs[i].type == "org.kde.plasma.kickoff") kickoffId = finalWs[i].id;
-        else if (finalWs[i].type == "org.kde.plasma.appmenu") appmenuId = finalWs[i].id;
-        else if (finalWs[i].type == "org.kde.plasma.marginsseparator" || finalWs[i].type == "org.kde.plasma.panelspacer") sepId = finalWs[i].id;
-        else if (finalWs[i].type == "org.kde.plasma.systemtray") trayId = finalWs[i].id;
-        else if (finalWs[i].type == "org.kde.plasma.digitalclock") clockId = finalWs[i].id;
+    // Expanding spacer pushing system tray & clock to the right
+    if (!spacerWidget) {{
+        spacerWidget = primary.addWidget("org.kde.plasma.panelspacer");
     }}
-    var orderList = [kickoffId, appmenuId, sepId, trayId, clockId].filter(function(x) {{ return x !== ""; }});
+
+    // Order top bar widgets: Apple Kickoff -> AppMenu -> Spacer -> SystemTray -> Clock
+    var orderList = [];
+    if (kickoffWidget) orderList.push(kickoffWidget.id);
+    if (appmenuWidget) orderList.push(appmenuWidget.id);
+    if (spacerWidget) orderList.push(spacerWidget.id);
+    if (trayWidget) orderList.push(trayWidget.id);
+    if (clockWidget) orderList.push(clockWidget.id);
+
     primary.currentConfigGroup = ["General"];
     primary.writeConfig("AppletOrder", orderList.join(";"));
     primary.reloadConfig();
 }}
 
+// Insert Launchpad into launchers if not present
+if (launchers && launchers.indexOf("launchpad.desktop") === -1) {{
+    launchers = "applications:launchpad.desktop," + launchers;
+}}
+
 var dock = new Panel;
 dock.location = "bottom";
-dock.height = 60;
+dock.height = 62;
 dock.floating = true;
-dock.lengthMode = "fitContent";
+dock.lengthMode = "fit";
+dock.minimumLength = 0;
+dock.maximumLength = 2194;
 dock.alignment = "center";
+dock.hiding = "dodgewindows";
 
 var dockTasks = dock.addWidget("org.kde.plasma.icontasks");
 if (launchers) {{
     dockTasks.currentConfigGroup = ["General"];
     dockTasks.writeConfig("launchers", launchers);
+    dockTasks.writeConfig("fill", "false");
+    dockTasks.writeConfig("iconSpacing", "1");
 }}
+dock.addWidget("org.kde.plasma.marginsseparator");
 dock.addWidget("org.kde.plasma.trash");
 """
         subprocess.call(["qdbus6", "org.kde.plasmashell", "/PlasmaShell", "evaluateScript", js], stderr=subprocess.DEVNULL)
@@ -551,7 +627,13 @@ def _apply_kde(theme_id: str) -> bool:
 
     # 1. Colorscheme, Accent & Desktop Theme (Panel)
     subprocess.call(["plasma-apply-colorscheme", "BreezeDark", "-a", theme["color"]], stderr=subprocess.DEVNULL)
-    subprocess.call(["plasma-apply-desktoptheme", "breeze-dark"], stderr=subprocess.DEVNULL)
+    if theme_id == "mac":
+        ensure_whitesur_icons()
+        ensure_kde_plasma_theme()
+        ensure_launchpad_desktop()
+        subprocess.call(["plasma-apply-desktoptheme", "WhiteSur-dark"], stderr=subprocess.DEVNULL)
+    else:
+        subprocess.call(["plasma-apply-desktoptheme", "breeze-dark"], stderr=subprocess.DEVNULL)
 
     # 2. Icons & Cursors
     subprocess.call(["kwriteconfig6", "--file", "kdeglobals", "--group", "Icons", "--key", "Theme", theme["icon_theme"]])
@@ -688,6 +770,8 @@ var ps = panels();
 for (var i = 0; i < ps.length; i++) {
     ps[i].height = 44;
     ps[i].floating = false;
+    ps[i].lengthMode = "fill";
+    ps[i].hiding = "none";
 }
 """
     subprocess.call(["qdbus6", "org.kde.plasmashell", "/PlasmaShell", "evaluateScript", js], stderr=subprocess.DEVNULL)

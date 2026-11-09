@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Launchpad
+Comment=Open Application Launcher
+Exec=qdbus6 org.kde.plasmashell /PlasmaShell activateLauncherMenu
+Icon=macos-launchpad
+Terminal=false
+Type=Application
+Categories=System;Utility;

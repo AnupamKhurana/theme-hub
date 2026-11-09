@@ -3,7 +3,11 @@
 import sys
 import os
 
-# Insert src directory into python path if running in-place
+# Support development, user-level, and system paths
+user_pkg = os.path.expanduser("~/.local/lib/python3/dist-packages")
+if os.path.isdir(user_pkg) and user_pkg not in sys.path:
+    sys.path.insert(0, user_pkg)
+
 src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if src_dir not in sys.path:
     sys.path.insert(0, src_dir)

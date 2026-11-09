@@ -71,15 +71,19 @@ cp -r "$SCRIPT_DIR/src/theme_hub" "$PY_DIR/"
 # 3. Install desktop launcher
 echo "Installing desktop launcher..."
 install -m 644 "$SCRIPT_DIR/data/io.github.themehub.desktop" "$DESKTOP_DIR/io.github.themehub.desktop"
+[ -f "$SCRIPT_DIR/data/launchpad.desktop" ] && install -m 644 "$SCRIPT_DIR/data/launchpad.desktop" "$DESKTOP_DIR/launchpad.desktop"
 
 # 4. Install icons
 echo "Installing application icons..."
 install -m 644 "$SCRIPT_DIR/assets/branding/io.github.themehub.svg" "$ICON_DIR/scalable/apps/io.github.themehub.svg"
 install -m 644 "$SCRIPT_DIR/assets/branding/io.github.themehub.png" "$ICON_DIR/128x128/apps/io.github.themehub.png"
 install -m 644 "$SCRIPT_DIR/assets/branding/io.github.themehub-64.png" "$ICON_DIR/64x64/apps/io.github.themehub-64.png"
+[ -f "$SCRIPT_DIR/assets/icons/custom-launchers/macos-launchpad.svg" ] && install -m 644 "$SCRIPT_DIR/assets/icons/custom-launchers/macos-launchpad.svg" "$ICON_DIR/scalable/apps/macos-launchpad.svg"
 
 # 5. Install assets
 echo "Installing theme assets (wallpapers, cursors, fonts, icons)..."
+rm -rf "$SHARE_DIR/theme-hub"
+mkdir -p "$SHARE_DIR/theme-hub"
 cp -r "$SCRIPT_DIR/assets/"* "$SHARE_DIR/theme-hub/"
 
 # Link fonts into font directories
