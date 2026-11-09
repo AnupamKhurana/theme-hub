@@ -24,9 +24,21 @@
 
 ## 📦 Installation Options
 
-### Option 1: Install via Debian Package (.deb) (Recommended for Debian/Ubuntu/Mint)
+### Option 1: Download Prebuilt `.deb` from GitHub Releases (Recommended for Debian / Ubuntu / Linux Mint)
 
-You can build and install the native Debian package:
+Download the latest `.deb` binary directly from the [GitHub Releases](https://github.com/AnupamKhurana/theme-hub/releases/latest) page, or via terminal:
+
+```bash
+# Download the latest release package
+wget https://github.com/AnupamKhurana/theme-hub/releases/latest/download/theme-hub_1.0.0_all.deb
+
+# Install with apt (automatically handles dependencies)
+sudo apt install ./theme-hub_1.0.0_all.deb
+```
+
+### Option 2: Build & Install from Source
+
+You can build the native `.deb` package directly from this repository:
 
 ```bash
 cd ~/Development/theme-hub
@@ -38,16 +50,16 @@ cd ~/Development/theme-hub
 sudo apt install ./dist/theme-hub_1.0.0_all.deb
 ```
 
-### Option 2: System-Wide Installer Script
+### Option 3: System-Wide Installer Script (Arch, Fedora, openSUSE, etc.)
 
-Works on any Linux distribution (Debian, Ubuntu, Fedora, Arch, openSUSE):
+Works on any Linux distribution without building a `.deb`:
 
 ```bash
 cd ~/Development/theme-hub
 sudo ./install.sh --system
 ```
 
-### Option 3: User-Level Installation (No Root / Sudo Required)
+### Option 4: User-Level Installation (No Root / Sudo Required)
 
 Installs entirely into your `~/.local` directory:
 
