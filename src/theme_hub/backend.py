@@ -90,6 +90,8 @@ def get_current_theme() -> str:
             ).strip()
             if "WhiteSur" in out:
                 return "mac"
+            elif "Win11" in out:
+                return "windows"
             elif "Tela" in out:
                 return "aesthetic"
             else:
@@ -104,6 +106,8 @@ def get_current_theme() -> str:
             ).strip()
             if "WhiteSur" in out:
                 return "mac"
+            elif "Win11" in out:
+                return "windows"
             elif "Tela" in out:
                 return "aesthetic"
             else:
@@ -207,6 +211,9 @@ def _apply_gnome(theme_id: str) -> bool:
 
     if theme_id == "mac":
         ensure_whitesur_icons()
+    elif theme_id == "windows":
+        ensure_win11_icons()
+        ensure_windows_start_icon()
 
     # 1. Dark mode & Themes
     subprocess.call(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", "prefer-dark"])
@@ -303,12 +310,44 @@ def _apply_dash_to_panel_gnome(theme_id: str):
             'show-apps-icon-file': launchpad_icon if os.path.exists(launchpad_icon) else '',
             'panel-element-positions': '{"AUO-0x00000000":[{"element":"showAppsButton","visible":true,"position":"stackedTL"},{"element":"taskbar","visible":true,"position":"stackedTL"},{"element":"leftBox","visible":false,"position":"stackedTL"},{"element":"centerBox","visible":false,"position":"centered"},{"element":"activitiesButton","visible":false,"position":"stackedBR"},{"element":"rightBox","visible":false,"position":"stackedBR"},{"element":"dateMenu","visible":false,"position":"stackedBR"},{"element":"systemMenu","visible":false,"position":"stackedBR"},{"element":"desktopButton","visible":false,"position":"stackedBR"}]}'
         }
+    elif theme_id == "windows":
+        win_start_icon = get_asset_path("icons", "custom-launchers", "windows11-start.svg")
+        d = {
+            'stockgs-keep-top-panel': 'false',
+            'panel-lengths': '{"AUO-0x00000000":100}',
+            'panel-sizes': '{"AUO-0x00000000":48}',
+            'panel-positions': '{"AUO-0x00000000":"BOTTOM"}',
+            'panel-anchors': '{"AUO-0x00000000":"MIDDLE"}',
+            'panel-top-bottom-margins': '0',
+            'panel-side-margins': '0',
+            'global-border-radius': '0',
+            'trans-use-custom-opacity': 'true',
+            'trans-panel-opacity': '0.90',
+            'trans-use-custom-bg': 'true',
+            'trans-bg-color': '#1c1c1c',
+            'dot-style-focused': 'METRO',
+            'dot-style-unfocused': 'NONE',
+            'dot-size': '3',
+            'dot-position': 'BOTTOM',
+            'dot-color-dominant': 'false',
+            'dot-color-override': 'false',
+            'highlight-appicon-hover': 'true',
+            'highlight-appicon-hover-border-radius': '4',
+            'animate-appicon-hover': 'true',
+            'animate-appicon-hover-animation-type': 'SIMPLE',
+            'show-apps-icon-file': win_start_icon if os.path.exists(win_start_icon) else '',
+            'panel-element-positions': '{"AUO-0x00000000":[{"element":"showAppsButton","visible":true,"position":"centerMonitor"},{"element":"taskbar","visible":true,"position":"centerMonitor"},{"element":"leftBox","visible":false,"position":"stackedTL"},{"element":"centerBox","visible":false,"position":"centered"},{"element":"activitiesButton","visible":false,"position":"stackedBR"},{"element":"rightBox","visible":true,"position":"stackedBR"},{"element":"systemMenu","visible":true,"position":"stackedBR"},{"element":"dateMenu","visible":true,"position":"stackedBR"},{"element":"desktopButton","visible":false,"position":"stackedBR"}]}'
+        }
     else:
         return
 
     for k, v in d.items():
         val = f"'{v}'" if not v.isdigit() and v not in ['true', 'false'] else v
         subprocess.call(['dconf', 'write', f'/org/gnome/shell/extensions/dash-to-panel/{k}', val])
+
+    if theme_id == "mac":
+        subprocess.call(["gsettings", "set", "org.gnome.desktop.interface", "clock-show-date", "true"], stderr=subprocess.DEVNULL)
+        subprocess.call(["gsettings", "set", "org.gnome.desktop.interface", "clock-show-weekday", "true"], stderr=subprocess.DEVNULL)
 
 
 def _apply_ghostty_theme(theme_id: str):
@@ -355,9 +394,15 @@ def ensure_whitesur_icons():
     """Ensure WhiteSur-dark icon theme with all scalable application icons is present and valid."""
     user_icon_theme = os.path.expanduser("~/.local/share/icons/WhiteSur-dark")
     scalable_check = os.path.join(user_icon_theme, "apps", "scalable")
+    tv_check = os.path.join(scalable_check, "com.tradingview.tradingview.svg")
     # If scalable dir is missing or is a broken symlink, sync complete bundled icons
-    if not os.path.exists(user_icon_theme) or not os.path.isdir(scalable_check) or os.path.islink(scalable_check):
-        bundled_icons = get_asset_path("icons", "WhiteSur-dark")
+    if not os.path.exists(user_icon_theme) or not os.path.isdir(scalable_check) or os.path.islink(scalable_check) or not os.path.exists(tv_check):
+        repo_icons = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "icons", "WhiteSur-dark"))
+        if os.path.exists(repo_icons) and os.path.isdir(os.path.join(repo_icons, "apps", "scalable")) and not os.path.islink(os.path.join(repo_icons, "apps", "scalable")):
+            bundled_icons = repo_icons
+        else:
+            bundled_icons = get_asset_path("icons", "WhiteSur-dark")
+
         if os.path.exists(bundled_icons):
             os.makedirs(os.path.dirname(user_icon_theme), exist_ok=True)
             if os.path.exists(user_icon_theme):
@@ -367,6 +412,40 @@ def ensure_whitesur_icons():
                     shutil.rmtree(user_icon_theme)
             shutil.copytree(bundled_icons, user_icon_theme, symlinks=True)
             subprocess.call(["gtk-update-icon-cache", "-f", "-t", user_icon_theme], stderr=subprocess.DEVNULL)
+
+
+def ensure_win11_icons():
+    """Ensure Win11-dark icon theme with all scalable application icons is present and valid."""
+    user_icon_theme = os.path.expanduser("~/.local/share/icons/Win11-dark")
+    scalable_check = os.path.join(user_icon_theme, "apps", "scalable")
+    settings_check = os.path.join(scalable_check, "systemsettings.svg")
+    if not os.path.exists(user_icon_theme) or not os.path.isdir(scalable_check) or os.path.islink(scalable_check) or not os.path.exists(settings_check) or os.path.islink(settings_check):
+        repo_icons = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "icons", "Win11-dark"))
+        if os.path.exists(repo_icons) and os.path.isdir(os.path.join(repo_icons, "apps", "scalable")) and not os.path.islink(os.path.join(repo_icons, "apps", "scalable")):
+            bundled_icons = repo_icons
+        else:
+            bundled_icons = get_asset_path("icons", "Win11-dark")
+
+        if os.path.exists(bundled_icons):
+            os.makedirs(os.path.dirname(user_icon_theme), exist_ok=True)
+            if os.path.exists(user_icon_theme):
+                if os.path.islink(user_icon_theme):
+                    os.unlink(user_icon_theme)
+                else:
+                    shutil.rmtree(user_icon_theme)
+            shutil.copytree(bundled_icons, user_icon_theme, symlinks=True)
+            subprocess.call(["gtk-update-icon-cache", "-f", "-t", user_icon_theme], stderr=subprocess.DEVNULL)
+
+
+def ensure_windows_start_icon():
+    """Ensure Windows 11 Start icon is installed in user icon directory."""
+    user_icon_dir = os.path.expanduser("~/.local/share/icons/hicolor/scalable/apps")
+    os.makedirs(user_icon_dir, exist_ok=True)
+    dst_icon = os.path.join(user_icon_dir, "windows11-start.svg")
+    if not os.path.exists(dst_icon):
+        src_icon = get_asset_path("icons", "custom-launchers", "windows11-start.svg")
+        if os.path.exists(src_icon):
+            shutil.copy2(src_icon, dst_icon)
 
 
 def ensure_kde_plasma_theme():
@@ -500,6 +579,17 @@ if (primary) {{
     if (!spacerWidget) {{
         spacerWidget = primary.addWidget("org.kde.plasma.panelspacer");
     }}
+    spacerWidget.currentConfigGroup = ["General"];
+    spacerWidget.writeConfig("expanding", "true");
+
+    // Configure macOS single-line clock format (Day Date Month | Time)
+    if (clockWidget) {{
+        clockWidget.currentConfigGroup = ["Appearance"];
+        clockWidget.writeConfig("showDate", "true");
+        clockWidget.writeConfig("dateDisplayFormat", "1");
+        clockWidget.writeConfig("dateFormat", "custom");
+        clockWidget.writeConfig("customDateFormat", "ddd d MMM");
+    }}
 
     // Order top bar widgets: Apple Kickoff -> AppMenu -> Spacer -> SystemTray -> Clock
     var orderList = [];
@@ -511,6 +601,7 @@ if (primary) {{
 
     primary.currentConfigGroup = ["General"];
     primary.writeConfig("AppletOrder", orderList.join(";"));
+    print("ORDER:" + primary.id + ":" + orderList.join(";"));
     primary.reloadConfig();
 }}
 
@@ -536,10 +627,136 @@ if (launchers) {{
     dockTasks.writeConfig("fill", "false");
     dockTasks.writeConfig("iconSpacing", "1");
 }}
-dock.addWidget("org.kde.plasma.marginsseparator");
-dock.addWidget("org.kde.plasma.trash");
+var dockSep = dock.addWidget("org.kde.plasma.marginsseparator");
+var dockTrash = dock.addWidget("org.kde.plasma.trash");
+dock.currentConfigGroup = ["General"];
+var dockOrder = [dockTasks.id, dockSep.id, dockTrash.id];
+dock.writeConfig("AppletOrder", dockOrder.join(";"));
+print("ORDER:" + dock.id + ":" + dockOrder.join(";"));
 """
-        subprocess.call(["qdbus6", "org.kde.plasmashell", "/PlasmaShell", "evaluateScript", js], stderr=subprocess.DEVNULL)
+
+    elif theme_id == "windows":
+        win_logo = get_asset_path("icons", "custom-launchers", "windows11-start.svg")
+        if not os.path.exists(win_logo):
+            win_logo = "/usr/share/icons/custom-launchers/windows11-start.svg"
+
+        js = f"""
+var ps = panels();
+var primary = null;
+var extraPanels = [];
+
+for (var i = 0; i < ps.length; i++) {{
+    var ws = ps[i].widgets();
+    var hasTray = false;
+    for (var j = 0; j < ws.length; j++) {{
+        if (ws[j].type == "org.kde.plasma.systemtray") {{
+            hasTray = true;
+            break;
+        }}
+    }}
+    if (hasTray && !primary) {{
+        primary = ps[i];
+    }} else {{
+        extraPanels.push(ps[i]);
+    }}
+}}
+if (!primary && ps.length > 0) primary = ps[0];
+
+var launchers = "";
+for (var i = 0; i < extraPanels.length; i++) {{
+    var ews = extraPanels[i].widgets();
+    for (var j = 0; j < ews.length; j++) {{
+        if (ews[j].type == "org.kde.plasma.icontasks") {{
+            ews[j].currentConfigGroup = ["General"];
+            launchers = ews[j].readConfig("launchers");
+        }}
+    }}
+    extraPanels[i].remove();
+}}
+
+// Strip macOS launchpad if present in launchers
+if (launchers) {{
+    launchers = launchers.replace("applications:launchpad.desktop,", "").replace("applications:launchpad.desktop", "");
+}}
+
+if (primary) {{
+    primary.location = "bottom";
+    primary.height = 48;
+    primary.floating = false;
+    primary.lengthMode = "fill";
+    primary.alignment = "center";
+    primary.hiding = "none";
+
+    var kickoffWidget = null;
+    var tasksWidget = null;
+    var trayWidget = null;
+    var clockWidget = null;
+    var spacers = [];
+
+    var ws = primary.widgets();
+    for (var i = 0; i < ws.length; i++) {{
+        var t = ws[i].type;
+        if (t == "org.kde.plasma.kickoff") kickoffWidget = ws[i];
+        else if (t == "org.kde.plasma.icontasks") {{
+            tasksWidget = ws[i];
+            if (!launchers) {{
+                ws[i].currentConfigGroup = ["General"];
+                launchers = ws[i].readConfig("launchers");
+            }}
+        }}
+        else if (t == "org.kde.plasma.systemtray") trayWidget = ws[i];
+        else if (t == "org.kde.plasma.digitalclock") clockWidget = ws[i];
+        else if (t == "org.kde.plasma.panelspacer") spacers.push(ws[i]);
+        else if (t == "org.kde.plasma.appmenu" || t == "org.kde.plasma.marginsseparator" || t == "org.kde.plasma.trash" || t == "org.kde.plasma.pager" || t == "org.kde.plasma.showdesktop") {{
+            ws[i].remove();
+        }}
+    }}
+
+    if (launchers) {{
+        launchers = launchers.replace("applications:launchpad.desktop,", "").replace("applications:launchpad.desktop", "");
+    }}
+
+    if (!kickoffWidget) kickoffWidget = primary.addWidget("org.kde.plasma.kickoff");
+    kickoffWidget.currentConfigGroup = ["General"];
+    kickoffWidget.writeConfig("icon", "{win_logo}");
+
+    if (!tasksWidget) tasksWidget = primary.addWidget("org.kde.plasma.icontasks");
+    tasksWidget.currentConfigGroup = ["General"];
+    if (launchers) {{
+        tasksWidget.writeConfig("launchers", launchers);
+    }}
+    tasksWidget.writeConfig("fill", "false");
+    tasksWidget.writeConfig("iconSpacing", "1");
+
+    if (!trayWidget) trayWidget = primary.addWidget("org.kde.plasma.systemtray");
+    if (!clockWidget) clockWidget = primary.addWidget("org.kde.plasma.digitalclock");
+
+    var spacer1 = spacers.length > 0 ? spacers[0] : primary.addWidget("org.kde.plasma.panelspacer");
+    var spacer2 = spacers.length > 1 ? spacers[1] : primary.addWidget("org.kde.plasma.panelspacer");
+
+    for (var i = 2; i < spacers.length; i++) {{
+        spacers[i].remove();
+    }}
+
+    spacer1.currentConfigGroup = ["General"];
+    spacer1.writeConfig("expanding", "true");
+    spacer2.currentConfigGroup = ["General"];
+    spacer2.writeConfig("expanding", "true");
+
+    clockWidget.currentConfigGroup = ["Appearance"];
+    clockWidget.writeConfig("showDate", "true");
+    clockWidget.writeConfig("dateDisplayFormat", "2");
+    clockWidget.writeConfig("dateFormat", "shortDate");
+
+    // Order: Spacer1 -> Windows Start -> Apps -> Spacer2 -> System Tray -> Clock (right aligned)
+    var orderList = [spacer1.id, kickoffWidget.id, tasksWidget.id, spacer2.id, trayWidget.id, clockWidget.id];
+
+    primary.currentConfigGroup = ["General"];
+    primary.writeConfig("AppletOrder", orderList.join(";"));
+    print("ORDER:" + primary.id + ":" + orderList.join(";"));
+    primary.reloadConfig();
+}}
+"""
 
     elif theme_id == "aesthetic":
         tela_logo = "/usr/share/icons/Tela-circle-dark/scalable/apps/distributor-logo-debian.svg"
@@ -586,36 +803,102 @@ if (primary) {{
     primary.lengthMode = "fill";
     primary.alignment = "center";
 
-    var hasTasks = false;
+    var kickoffWidget = null;
+    var tasksWidget = null;
+    var trayWidget = null;
+    var clockWidget = null;
+    var spacers = [];
+
     var ws = primary.widgets();
     for (var i = 0; i < ws.length; i++) {{
-        if (ws[i].type == "org.kde.plasma.icontasks") {{
-            hasTasks = true;
+        var t = ws[i].type;
+        if (t == "org.kde.plasma.icontasks") {{
+            tasksWidget = ws[i];
             if (launchers) {{
                 ws[i].currentConfigGroup = ["General"];
                 ws[i].writeConfig("launchers", launchers);
             }}
-        }} else if (ws[i].type == "org.kde.plasma.appmenu") {{
-            ws[i].remove();
-        }} else if (ws[i].type == "org.kde.plasma.kickoff") {{
+        }} else if (t == "org.kde.plasma.kickoff") {{
+            kickoffWidget = ws[i];
             ws[i].currentConfigGroup = ["General"];
             if ("{tela_logo}") {{
                 ws[i].writeConfig("icon", "{tela_logo}");
             }} else {{
                 ws[i].writeConfig("icon", "");
             }}
+        }} else if (t == "org.kde.plasma.systemtray") trayWidget = ws[i];
+        else if (t == "org.kde.plasma.digitalclock") clockWidget = ws[i];
+        else if (t == "org.kde.plasma.panelspacer") spacers.push(ws[i]);
+        else if (t == "org.kde.plasma.appmenu") {{
+            ws[i].remove();
         }}
     }}
-    if (!hasTasks) {{
-        var t = primary.addWidget("org.kde.plasma.icontasks");
+    if (!tasksWidget) {{
+        tasksWidget = primary.addWidget("org.kde.plasma.icontasks");
         if (launchers) {{
-            t.currentConfigGroup = ["General"];
-            t.writeConfig("launchers", launchers);
+            tasksWidget.currentConfigGroup = ["General"];
+            tasksWidget.writeConfig("launchers", launchers);
         }}
     }}
+    if (!kickoffWidget) kickoffWidget = primary.addWidget("org.kde.plasma.kickoff");
+    if (!trayWidget) trayWidget = primary.addWidget("org.kde.plasma.systemtray");
+    if (!clockWidget) clockWidget = primary.addWidget("org.kde.plasma.digitalclock");
+
+    var spacer1 = spacers.length > 0 ? spacers[0] : primary.addWidget("org.kde.plasma.panelspacer");
+    var spacer2 = spacers.length > 1 ? spacers[1] : primary.addWidget("org.kde.plasma.panelspacer");
+    for (var i = 2; i < spacers.length; i++) {{
+        spacers[i].remove();
+    }}
+    spacer1.currentConfigGroup = ["General"];
+    spacer1.writeConfig("expanding", "true");
+    spacer2.currentConfigGroup = ["General"];
+    spacer2.writeConfig("expanding", "true");
+
+    if (clockWidget) {{
+        clockWidget.currentConfigGroup = ["Appearance"];
+        clockWidget.writeConfig("showDate", "true");
+    }}
+
+    var orderList = [spacer1.id, kickoffWidget.id, tasksWidget.id, spacer2.id, trayWidget.id, clockWidget.id];
+    primary.currentConfigGroup = ["General"];
+    primary.writeConfig("AppletOrder", orderList.join(";"));
+    print("ORDER:" + primary.id + ":" + orderList.join(";"));
+    primary.reloadConfig();
 }}
 """
-        subprocess.call(["qdbus6", "org.kde.plasmashell", "/PlasmaShell", "evaluateScript", js], stderr=subprocess.DEVNULL)
+    else:
+        return
+
+    res = subprocess.run(["qdbus6", "org.kde.plasmashell", "/PlasmaShell", "evaluateScript", js], capture_output=True, text=True)
+
+    orders = {}
+    for line in res.stdout.splitlines():
+        if line.startswith("ORDER:"):
+            parts = line.split(":")
+            if len(parts) >= 3:
+                orders[parts[1]] = parts[2]
+
+    if orders:
+        ret = subprocess.call(["systemctl", "--user", "stop", "plasma-plasmashell"], stderr=subprocess.DEVNULL)
+        if ret != 0:
+            subprocess.call(["kquitapp6", "plasmashell"], stderr=subprocess.DEVNULL)
+            time.sleep(0.5)
+
+        for cid, applet_order in orders.items():
+            subprocess.call([
+                "kwriteconfig6",
+                "--file", "plasma-org.kde.plasma.desktop-appletsrc",
+                "--group", "Containments",
+                "--group", str(cid),
+                "--group", "General",
+                "--key", "AppletOrder",
+                applet_order
+            ])
+
+        ret = subprocess.call(["systemctl", "--user", "start", "plasma-plasmashell"], stderr=subprocess.DEVNULL)
+        if ret != 0:
+            subprocess.Popen(["kstart", "plasmashell"], stderr=subprocess.DEVNULL)
+        time.sleep(1)
 
 
 def _apply_kde(theme_id: str) -> bool:
@@ -632,6 +915,10 @@ def _apply_kde(theme_id: str) -> bool:
         ensure_kde_plasma_theme()
         ensure_launchpad_desktop()
         subprocess.call(["plasma-apply-desktoptheme", "WhiteSur-dark"], stderr=subprocess.DEVNULL)
+    elif theme_id == "windows":
+        ensure_win11_icons()
+        ensure_windows_start_icon()
+        subprocess.call(["plasma-apply-desktoptheme", "breeze-dark"], stderr=subprocess.DEVNULL)
     else:
         subprocess.call(["plasma-apply-desktoptheme", "breeze-dark"], stderr=subprocess.DEVNULL)
 
@@ -661,6 +948,8 @@ def _apply_kde(theme_id: str) -> bool:
     # 7. Sync GSettings & GTK 3/4 settings for GTK apps running on KDE
     if theme_id == "mac":
         gtk_layout = "close,minimize,maximize:"
+    elif theme_id == "windows":
+        gtk_layout = "appmenu:minimize,maximize,close"
     else:
         gtk_layout = "appmenu:close"
 

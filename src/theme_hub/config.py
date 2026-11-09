@@ -79,6 +79,25 @@ THEMES = [
         "description": "Clean, focused, modern dark theme designed for distraction-free coding and daily computing."
     },
     {
+        "id": "windows",
+        "title": "Windows 11 Look",
+        "subtitle": "Centered taskbar • Windows start menu • Win11 Fluent icons • Bloom 4K wallpaper • Right window controls",
+        "icon": get_asset_path("icons", "custom-launchers", "windows11-start.svg"),
+        "color": "#0078d4",
+        "accent_name": "blue",
+        "wallpaper": ("backgrounds", "windows", "bloom-dark.jpg"),
+        "wallpaper_dark": ("backgrounds", "windows", "bloom-dark.jpg"),
+        "wallpaper_light": ("backgrounds", "windows", "bloom-light.jpg"),
+        "icon_theme": "Win11-dark",
+        "cursor_theme": "Bibata-Modern-Classic",
+        "font_family": "Inter",
+        "font_mono": "JetBrains Mono",
+        "button_layout_gnome": "appmenu:minimize,maximize,close",
+        "button_layout_kde_left": "",
+        "button_layout_kde_right": "IAX",
+        "description": "Authentic Windows 11 desktop experience featuring centered taskbar with Windows start menu, Fluent design icons, Bloom wallpaper, and right-aligned window controls."
+    },
+    {
         "id": "mac",
         "title": "macOS Sonoma Look",
         "subtitle": "Apple menu bar & Global AppMenu • Centered floating dock • WhiteSur icons • Sonoma 4K wallpaper",

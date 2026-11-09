@@ -49,6 +49,7 @@ cp "$SCRIPT_DIR/assets/branding/io.github.themehub.svg" "$BUILD_DIR/usr/share/ic
 cp "$SCRIPT_DIR/assets/branding/io.github.themehub.png" "$BUILD_DIR/usr/share/icons/hicolor/128x128/apps/"
 cp "$SCRIPT_DIR/assets/branding/io.github.themehub-64.png" "$BUILD_DIR/usr/share/icons/hicolor/64x64/apps/"
 [ -f "$SCRIPT_DIR/assets/icons/custom-launchers/macos-launchpad.svg" ] && cp "$SCRIPT_DIR/assets/icons/custom-launchers/macos-launchpad.svg" "$BUILD_DIR/usr/share/icons/hicolor/scalable/apps/macos-launchpad.svg"
+[ -f "$SCRIPT_DIR/assets/icons/custom-launchers/windows11-start.svg" ] && cp "$SCRIPT_DIR/assets/icons/custom-launchers/windows11-start.svg" "$BUILD_DIR/usr/share/icons/hicolor/scalable/apps/windows11-start.svg"
 
 # 6. Bundled Assets (Wallpapers, Cursors, Fonts, Icons, Branding, Plasma Styles)
 cp -r "$SCRIPT_DIR/assets/backgrounds" "$BUILD_DIR/usr/share/theme-hub/"
