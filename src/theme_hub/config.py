@@ -10,6 +10,9 @@ APP_VERSION = "1.0.0"
 CURRENT_THEME_FILE = os.path.expanduser("~/.config/ui-current-theme")
 BACKUP_DIR_GNOME = os.path.expanduser("~/.config/ui-aesthetic-backup")
 BACKUP_DIR_KDE = os.path.expanduser("~/.config/ui-aesthetic-backup/kde-backup")
+BACKUP_DIR_CINNAMON = os.path.expanduser("~/.config/ui-aesthetic-backup/cinnamon-backup")
+BACKUP_DIR_XFCE = os.path.expanduser("~/.config/ui-aesthetic-backup/xfce-backup")
+BACKUP_DIR_MATE = os.path.expanduser("~/.config/ui-aesthetic-backup/mate-backup")
 
 def resolve_asset_dir():
     """Find the root directory where theme-hub assets are installed or located."""

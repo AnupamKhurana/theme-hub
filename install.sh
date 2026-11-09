@@ -3,28 +3,43 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODE="system"
+DESTDIR=""
 
-for arg in "$@"; do
-    case "$arg" in
+while [ $# -gt 0 ]; do
+    case "$1" in
         --user)
             MODE="user"
+            shift
             ;;
         --system)
             MODE="system"
+            shift
+            ;;
+        --destdir)
+            DESTDIR="$2"
+            shift 2
+            ;;
+        --destdir=*)
+            DESTDIR="${1#*=}"
+            shift
             ;;
         --help|-h)
             echo "Theme Hub Installer"
-            echo "Usage: ./install.sh [--user | --system]"
+            echo "Usage: ./install.sh [--user | --system] [--destdir DIR]"
             echo ""
             echo "Options:"
-            echo "  --user    Install into ~/.local (no root required)"
-            echo "  --system  Install into /usr/local (requires sudo/root)"
+            echo "  --user         Install into ~/.local (no root required)"
+            echo "  --system       Install into /usr/local (requires sudo/root)"
+            echo "  --destdir DIR  Staged install root for packaging (e.g. PKGBUILD, rpmbuild)"
             exit 0
+            ;;
+        *)
+            shift
             ;;
     esac
 done
 
-if [ "$MODE" = "system" ] && [ "$(id -u)" -ne 0 ]; then
+if [ "$MODE" = "system" ] && [ -z "$DESTDIR" ] && [ "$(id -u)" -ne 0 ]; then
     echo "Warning: Installing system-wide requires root privileges."
     echo "Rerunning with sudo..."
     exec sudo "$0" --system
@@ -35,19 +50,22 @@ echo " Installing Theme Hub ($MODE mode)..."
 echo "=========================================="
 
 if [ "$MODE" = "system" ]; then
-    PREFIX="/usr/local"
+    PREFIX="${DESTDIR}/usr/local"
     BIN_DIR="$PREFIX/bin"
     SHARE_DIR="$PREFIX/share"
-    PY_DIR="/usr/local/lib/python3/dist-packages"
-    DESKTOP_DIR="/usr/share/applications"
-    ICON_DIR="/usr/share/icons/hicolor"
+    PY_DIR="${DESTDIR}$(python3 -c "import sysconfig; print(sysconfig.get_path('purelib'))" 2>/dev/null || echo "/usr/local/lib/python3/dist-packages")"
+    DESKTOP_DIR="${DESTDIR}/usr/share/applications"
+    ICON_DIR="${DESTDIR}/usr/share/icons/hicolor"
+    FONT_DIR="${DESTDIR}/usr/share/fonts/truetype/theme-hub"
 else
-    PREFIX="$HOME/.local"
+    PREFIX="${DESTDIR}${HOME}/.local"
     BIN_DIR="$PREFIX/bin"
     SHARE_DIR="$PREFIX/share"
-    PY_DIR="$PREFIX/lib/python3/dist-packages"
+    PY_DIR="${DESTDIR}$(python3 -c "import site; print(site.getusersitepackages())" 2>/dev/null || echo "$PREFIX/lib/python3/dist-packages")"
+    PY_DIST_DIR="$PREFIX/lib/python3/dist-packages"
     DESKTOP_DIR="$PREFIX/share/applications"
     ICON_DIR="$PREFIX/share/icons/hicolor"
+    FONT_DIR="${DESTDIR}${HOME}/.local/share/fonts"
 fi
 
 mkdir -p "$BIN_DIR"
@@ -67,6 +85,11 @@ install -m 755 "$SCRIPT_DIR/src/bin/theme-hub-cli" "$BIN_DIR/theme-hub-cli"
 echo "Installing python package to $PY_DIR..."
 rm -rf "$PY_DIR/theme_hub"
 cp -r "$SCRIPT_DIR/src/theme_hub" "$PY_DIR/"
+if [ -n "$PY_DIST_DIR" ] && [ "$PY_DIST_DIR" != "$PY_DIR" ]; then
+    mkdir -p "$PY_DIST_DIR"
+    rm -rf "$PY_DIST_DIR/theme_hub"
+    cp -r "$SCRIPT_DIR/src/theme_hub" "$PY_DIST_DIR/"
+fi
 
 # 3. Install desktop launcher
 echo "Installing desktop launcher..."
@@ -88,14 +111,10 @@ mkdir -p "$SHARE_DIR/theme-hub"
 cp -r "$SCRIPT_DIR/assets/"* "$SHARE_DIR/theme-hub/"
 
 # Link fonts into font directories
-if [ "$MODE" = "system" ]; then
-    mkdir -p /usr/share/fonts/truetype/theme-hub
-    cp -rn "$SCRIPT_DIR/assets/fonts/"* /usr/share/fonts/truetype/theme-hub/ 2>/dev/null || true
-    fc-cache -f /usr/share/fonts/truetype/theme-hub 2>/dev/null || true
-else
-    mkdir -p "$HOME/.local/share/fonts"
-    cp -rn "$SCRIPT_DIR/assets/fonts/"* "$HOME/.local/share/fonts/" 2>/dev/null || true
-    fc-cache -f "$HOME/.local/share/fonts" 2>/dev/null || true
+mkdir -p "$FONT_DIR"
+cp -rn "$SCRIPT_DIR/assets/fonts/"* "$FONT_DIR/" 2>/dev/null || true
+if [ -z "$DESTDIR" ]; then
+    fc-cache -f "$FONT_DIR" 2>/dev/null || true
 fi
 
 # Refresh desktop & icon databases

@@ -10,6 +10,9 @@ from theme_hub.config import (
     CURRENT_THEME_FILE,
     BACKUP_DIR_GNOME,
     BACKUP_DIR_KDE,
+    BACKUP_DIR_CINNAMON,
+    BACKUP_DIR_XFCE,
+    BACKUP_DIR_MATE,
     THEMES,
     get_asset_path,
 )
@@ -39,11 +42,17 @@ def _setup_env():
 
 
 def detect_desktop_environment() -> str:
-    """Detect current Desktop Environment (gnome, kde, or generic)."""
+    """Detect current Desktop Environment (gnome, kde, cinnamon, xfce, mate, or generic)."""
     current_desktop = os.environ.get("XDG_CURRENT_DESKTOP", "").lower()
     desktop_session = os.environ.get("DESKTOP_SESSION", "").lower()
 
-    if "gnome" in current_desktop or "gnome" in desktop_session:
+    if "cinnamon" in current_desktop or "cinnamon" in desktop_session or "x-cinnamon" in desktop_session:
+        return "cinnamon"
+    elif "xfce" in current_desktop or "xfce" in desktop_session or "xubuntu" in desktop_session:
+        return "xfce"
+    elif "mate" in current_desktop or "mate" in desktop_session:
+        return "mate"
+    elif "gnome" in current_desktop or "gnome" in desktop_session or "ubuntu" in current_desktop:
         return "gnome"
     elif "kde" in current_desktop or "plasma" in desktop_session or os.environ.get("KDE_FULL_SESSION") == "true":
         return "kde"
@@ -51,7 +60,13 @@ def detect_desktop_environment() -> str:
     # Fallback to checking running processes
     try:
         ps_out = subprocess.check_output(["ps", "-u", str(os.getuid()), "-o", "comm"], text=True)
-        if "gnome-shell" in ps_out:
+        if "cinnamon" in ps_out:
+            return "cinnamon"
+        elif "xfce4-session" in ps_out or "xfwm4" in ps_out:
+            return "xfce"
+        elif "mate-session" in ps_out:
+            return "mate"
+        elif "gnome-shell" in ps_out:
             return "gnome"
         elif "plasmashell" in ps_out or "kwin_wayland" in ps_out:
             return "kde"
@@ -82,10 +97,11 @@ def get_current_theme() -> str:
 
     # Inspect current system settings as fallback
     de = detect_desktop_environment()
-    if de == "gnome":
+    if de in ["gnome", "cinnamon", "mate"]:
+        schema = "org.gnome.desktop.interface" if de == "gnome" else ("org.cinnamon.desktop.interface" if de == "cinnamon" else "org.mate.interface")
         try:
             out = subprocess.check_output(
-                ["gsettings", "get", "org.gnome.desktop.interface", "icon-theme"],
+                ["gsettings", "get", schema, "icon-theme"],
                 text=True
             ).strip()
             if "WhiteSur" in out:
@@ -102,6 +118,22 @@ def get_current_theme() -> str:
         try:
             out = subprocess.check_output(
                 ["kreadconfig6", "--file", "kdeglobals", "--group", "Icons", "--key", "Theme"],
+                text=True
+            ).strip()
+            if "WhiteSur" in out:
+                return "mac"
+            elif "Win11" in out:
+                return "windows"
+            elif "Tela" in out:
+                return "aesthetic"
+            else:
+                return "original"
+        except Exception:
+            return "aesthetic"
+    elif de == "xfce":
+        try:
+            out = subprocess.check_output(
+                ["xfconf-query", "-c", "xsettings", "-p", "/Net/IconThemeName"],
                 text=True
             ).strip()
             if "WhiteSur" in out:
@@ -146,6 +178,26 @@ def ensure_backup():
             if os.path.exists(src) and not os.path.exists(dst):
                 shutil.copy2(src, dst)
 
+    elif de == "cinnamon":
+        os.makedirs(BACKUP_DIR_CINNAMON, exist_ok=True)
+        backup_file = os.path.join(BACKUP_DIR_CINNAMON, "cinnamon-backup.dconf")
+        if not os.path.exists(backup_file):
+            try:
+                with open(backup_file, "w") as f:
+                    subprocess.run(["dconf", "dump", "/org/cinnamon/"], stdout=f, check=True)
+            except Exception:
+                pass
+
+    elif de == "mate":
+        os.makedirs(BACKUP_DIR_MATE, exist_ok=True)
+        backup_file = os.path.join(BACKUP_DIR_MATE, "mate-backup.dconf")
+        if not os.path.exists(backup_file):
+            try:
+                with open(backup_file, "w") as f:
+                    subprocess.run(["dconf", "dump", "/org/mate/"], stdout=f, check=True)
+            except Exception:
+                pass
+
 
 def sync_gtk_settings(dark_mode: bool, icon_theme: str, cursor_theme: str, button_layout: str = None):
     """Sync GTK 3 & 4 settings files so cross-toolkit apps (Chrome, Ghostty, etc.) inherit them."""
@@ -182,6 +234,12 @@ def apply_theme(theme_id: str) -> bool:
             success = _revert_gnome()
         elif de == "kde":
             success = _revert_kde()
+        elif de == "cinnamon":
+            success = _revert_cinnamon()
+        elif de == "xfce":
+            success = _revert_xfce()
+        elif de == "mate":
+            success = _revert_mate()
         else:
             success = _revert_generic()
     else:
@@ -189,6 +247,12 @@ def apply_theme(theme_id: str) -> bool:
             success = _apply_gnome(theme_id)
         elif de == "kde":
             success = _apply_kde(theme_id)
+        elif de == "cinnamon":
+            success = _apply_cinnamon(theme_id)
+        elif de == "xfce":
+            success = _apply_xfce(theme_id)
+        elif de == "mate":
+            success = _apply_mate(theme_id)
         else:
             success = _apply_generic(theme_id)
 
@@ -1075,6 +1139,180 @@ for (var i = 0; i < ps.length; i++) {
 
     # 7. Broadcast changes & sycoca reload
     _reload_kde_icons()
+    return True
+
+
+def _apply_cinnamon(theme_id: str) -> bool:
+    """Apply theme settings for Cinnamon (Linux Mint)."""
+    theme = next((t for t in THEMES if t["id"] == theme_id), None)
+    if not theme:
+        return False
+
+    if theme_id == "mac":
+        ensure_whitesur_icons()
+    elif theme_id == "windows":
+        ensure_win11_icons()
+        ensure_windows_start_icon()
+
+    # 1. Interface themes
+    subprocess.call(["gsettings", "set", "org.cinnamon.desktop.interface", "icon-theme", theme["icon_theme"]], stderr=subprocess.DEVNULL)
+    subprocess.call(["gsettings", "set", "org.cinnamon.desktop.interface", "cursor-theme", theme["cursor_theme"]], stderr=subprocess.DEVNULL)
+    subprocess.call(["gsettings", "set", "org.cinnamon.desktop.interface", "font-name", "Inter 10"], stderr=subprocess.DEVNULL)
+
+    # 2. GTK theme & Dark style
+    gtk_theme = "Mint-Y-Dark" if theme_id in ["windows", "aesthetic", "mac"] else "Mint-Y"
+    subprocess.call(["gsettings", "set", "org.cinnamon.desktop.interface", "gtk-theme", gtk_theme], stderr=subprocess.DEVNULL)
+
+    # 3. Window controls button layout
+    if theme_id == "mac":
+        layout = "close,minimize,maximize:"
+    elif theme_id == "windows":
+        layout = ":minimize,maximize,close"
+    else:
+        layout = ":minimize,maximize,close"
+    subprocess.call(["gsettings", "set", "org.cinnamon.desktop.wm.preferences", "button-layout", layout], stderr=subprocess.DEVNULL)
+
+    # 4. Wallpaper
+    if "wallpaper" in theme and theme["wallpaper"]:
+        wall_path = get_asset_path(*theme["wallpaper"])
+    else:
+        wall_path = get_asset_path(*theme.get("wallpaper_dark", ("backgrounds", "aesthetic", "calm-night.png")))
+    subprocess.call(["gsettings", "set", "org.cinnamon.desktop.background", "picture-uri", f"file://{wall_path}"], stderr=subprocess.DEVNULL)
+    subprocess.call(["gsettings", "set", "org.cinnamon.desktop.background", "picture-options", "zoom"], stderr=subprocess.DEVNULL)
+
+    # 5. Cross-toolkit GTK sync
+    sync_gtk_settings(dark_mode=True, icon_theme=theme["icon_theme"], cursor_theme=theme["cursor_theme"], button_layout=layout)
+    _apply_ghostty_theme(theme_id)
+    return True
+
+
+def _revert_cinnamon() -> bool:
+    """Revert Cinnamon to stock defaults."""
+    backup_file = os.path.join(BACKUP_DIR_CINNAMON, "cinnamon-backup.dconf")
+    if os.path.exists(backup_file):
+        try:
+            with open(backup_file, "r") as f:
+                subprocess.run(["dconf", "load", "/org/cinnamon/"], stdin=f, check=True)
+            return True
+        except Exception:
+            pass
+
+    subprocess.call(["gsettings", "set", "org.cinnamon.desktop.interface", "icon-theme", "Mint-Y"], stderr=subprocess.DEVNULL)
+    subprocess.call(["gsettings", "set", "org.cinnamon.desktop.interface", "cursor-theme", "Bibata-Modern-Classic"], stderr=subprocess.DEVNULL)
+    subprocess.call(["gsettings", "set", "org.cinnamon.desktop.interface", "gtk-theme", "Mint-Y"], stderr=subprocess.DEVNULL)
+    subprocess.call(["gsettings", "set", "org.cinnamon.desktop.wm.preferences", "button-layout", ":minimize,maximize,close"], stderr=subprocess.DEVNULL)
+    sync_gtk_settings(dark_mode=False, icon_theme="Mint-Y", cursor_theme="Bibata-Modern-Classic", button_layout=":minimize,maximize,close")
+    return True
+
+
+def _apply_xfce(theme_id: str) -> bool:
+    """Apply theme settings for XFCE."""
+    theme = next((t for t in THEMES if t["id"] == theme_id), None)
+    if not theme:
+        return False
+
+    if theme_id == "mac":
+        ensure_whitesur_icons()
+    elif theme_id == "windows":
+        ensure_win11_icons()
+        ensure_windows_start_icon()
+
+    # 1. Icons & Cursors
+    subprocess.call(["xfconf-query", "-c", "xsettings", "-p", "/Net/IconThemeName", "-s", theme["icon_theme"], "--create", "-t", "string"], stderr=subprocess.DEVNULL)
+    subprocess.call(["xfconf-query", "-c", "xsettings", "-p", "/Net/CursorThemeName", "-s", theme["cursor_theme"], "--create", "-t", "string"], stderr=subprocess.DEVNULL)
+    subprocess.call(["xfconf-query", "-c", "xsettings", "-p", "/Gtk/FontName", "-s", "Inter 10", "--create", "-t", "string"], stderr=subprocess.DEVNULL)
+
+    # 2. Window manager buttons (xfwm4: C=Close, M=Maximize, H=Hide/Minimize, |=Title)
+    if theme_id == "mac":
+        btn_layout = "CMH|"
+        gtk_layout = "close,minimize,maximize:"
+    elif theme_id == "windows":
+        btn_layout = "|HMC"
+        gtk_layout = "appmenu:minimize,maximize,close"
+    else:
+        btn_layout = "|HMC"
+        gtk_layout = "appmenu:close"
+
+    subprocess.call(["xfconf-query", "-c", "xfwm4", "-p", "/general/button_layout", "-s", btn_layout, "--create", "-t", "string"], stderr=subprocess.DEVNULL)
+
+    # 3. Wallpaper
+    if "wallpaper" in theme and theme["wallpaper"]:
+        wall_path = get_asset_path(*theme["wallpaper"])
+    else:
+        wall_path = get_asset_path(*theme.get("wallpaper_dark", ("backgrounds", "aesthetic", "calm-night.png")))
+
+    try:
+        props = subprocess.check_output(["xfconf-query", "-c", "xfce4-desktop", "-l"], text=True, stderr=subprocess.DEVNULL).splitlines()
+        for p in props:
+            if "last-image" in p:
+                subprocess.call(["xfconf-query", "-c", "xfce4-desktop", "-p", p, "-s", wall_path], stderr=subprocess.DEVNULL)
+    except Exception:
+        subprocess.call(["xfconf-query", "-c", "xfce4-desktop", "-p", "/backdrop/screen0/monitor0/workspace0/last-image", "-s", wall_path, "--create", "-t", "string"], stderr=subprocess.DEVNULL)
+
+    # 4. Cross-toolkit GTK sync
+    sync_gtk_settings(dark_mode=True, icon_theme=theme["icon_theme"], cursor_theme=theme["cursor_theme"], button_layout=gtk_layout)
+    _apply_ghostty_theme(theme_id)
+    return True
+
+
+def _revert_xfce() -> bool:
+    """Revert XFCE to stock defaults."""
+    subprocess.call(["xfconf-query", "-c", "xsettings", "-p", "/Net/IconThemeName", "-s", "elementary-xfce-darker"], stderr=subprocess.DEVNULL)
+    subprocess.call(["xfconf-query", "-c", "xsettings", "-p", "/Net/CursorThemeName", "-s", "default"], stderr=subprocess.DEVNULL)
+    subprocess.call(["xfconf-query", "-c", "xfwm4", "-p", "/general/button_layout", "-s", "|HMC"], stderr=subprocess.DEVNULL)
+    sync_gtk_settings(dark_mode=False, icon_theme="elementary-xfce-darker", cursor_theme="default", button_layout="|HMC")
+    return True
+
+
+def _apply_mate(theme_id: str) -> bool:
+    """Apply theme settings for MATE desktop."""
+    theme = next((t for t in THEMES if t["id"] == theme_id), None)
+    if not theme:
+        return False
+
+    if theme_id == "mac":
+        ensure_whitesur_icons()
+    elif theme_id == "windows":
+        ensure_win11_icons()
+        ensure_windows_start_icon()
+
+    subprocess.call(["gsettings", "set", "org.mate.interface", "icon-theme", theme["icon_theme"]], stderr=subprocess.DEVNULL)
+    subprocess.call(["gsettings", "set", "org.mate.peripherals-mouse", "cursor-theme", theme["cursor_theme"]], stderr=subprocess.DEVNULL)
+
+    if theme_id == "mac":
+        layout = "close,minimize,maximize:"
+    elif theme_id == "windows":
+        layout = ":minimize,maximize,close"
+    else:
+        layout = ":close"
+    subprocess.call(["gsettings", "set", "org.mate.Marco.general", "button-layout", layout], stderr=subprocess.DEVNULL)
+
+    if "wallpaper" in theme and theme["wallpaper"]:
+        wall_path = get_asset_path(*theme["wallpaper"])
+    else:
+        wall_path = get_asset_path(*theme.get("wallpaper_dark", ("backgrounds", "aesthetic", "calm-night.png")))
+    subprocess.call(["gsettings", "set", "org.mate.background", "picture-filename", wall_path], stderr=subprocess.DEVNULL)
+
+    sync_gtk_settings(dark_mode=True, icon_theme=theme["icon_theme"], cursor_theme=theme["cursor_theme"], button_layout=layout)
+    _apply_ghostty_theme(theme_id)
+    return True
+
+
+def _revert_mate() -> bool:
+    """Revert MATE to stock defaults."""
+    backup_file = os.path.join(BACKUP_DIR_MATE, "mate-backup.dconf")
+    if os.path.exists(backup_file):
+        try:
+            with open(backup_file, "r") as f:
+                subprocess.run(["dconf", "load", "/org/mate/"], stdin=f, check=True)
+            return True
+        except Exception:
+            pass
+
+    subprocess.call(["gsettings", "set", "org.mate.interface", "icon-theme", "mate"], stderr=subprocess.DEVNULL)
+    subprocess.call(["gsettings", "set", "org.mate.peripherals-mouse", "cursor-theme", "default"], stderr=subprocess.DEVNULL)
+    subprocess.call(["gsettings", "set", "org.mate.Marco.general", "button-layout", ":minimize,maximize,close"], stderr=subprocess.DEVNULL)
+    sync_gtk_settings(dark_mode=False, icon_theme="mate", cursor_theme="default", button_layout=":minimize,maximize,close")
     return True
 
 

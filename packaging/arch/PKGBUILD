@@ -1,0 +1,24 @@
+# Maintainer: Anupam Khurana <anupam@example.com>
+pkgname=theme-hub
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Instant desktop aesthetic switcher for Linux desktops (macOS, Windows 11, Modern Dark)"
+arch=('any')
+url="https://github.com/AnupamKhurana/theme-hub"
+license=('GPL-3.0-or-later')
+depends=('python' 'gtk4' 'python-gobject' 'libadwaita')
+optdepends=(
+    'plasma-desktop: For KDE Plasma support'
+    'gnome-shell: For GNOME Shell support'
+    'gnome-shell-extension-dash-to-panel: For GNOME panel docking'
+    'cinnamon: For Linux Mint / Cinnamon support'
+    'xfce4-panel: For XFCE support'
+    'libnotify: For desktop notifications'
+)
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+    cd "$srcdir/$pkgname-$pkgver"
+    ./install.sh --system --destdir "$pkgdir"
+}

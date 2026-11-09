@@ -4,14 +4,25 @@ import sys
 import os
 import argparse
 
-# Support development, user-level, and system paths
-user_pkg = os.path.expanduser("~/.local/lib/python3/dist-packages")
-if os.path.isdir(user_pkg) and user_pkg not in sys.path:
-    sys.path.insert(0, user_pkg)
-
+# Support development, user-level (both site-packages and dist-packages), and system paths
 src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if src_dir not in sys.path:
     sys.path.insert(0, src_dir)
+
+import glob
+for p in [
+    os.path.expanduser("~/.local/lib/python3/dist-packages"),
+    os.path.expanduser("~/.local/lib/python3/site-packages"),
+    "/usr/share/theme-hub/python",
+    "/usr/local/share/theme-hub/python",
+]:
+    if os.path.isdir(p) and p not in sys.path:
+        sys.path.append(p)
+
+for pattern in ["~/.local/lib/python3.*/dist-packages", "~/.local/lib/python3.*/site-packages"]:
+    for match in glob.glob(os.path.expanduser(pattern)):
+        if match not in sys.path:
+            sys.path.append(match)
 
 from theme_hub.config import THEMES, APP_NAME, APP_VERSION
 from theme_hub.backend import (
