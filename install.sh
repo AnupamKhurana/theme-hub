@@ -102,7 +102,9 @@ install -m 644 "$SCRIPT_DIR/assets/branding/io.github.themehub.svg" "$ICON_DIR/s
 install -m 644 "$SCRIPT_DIR/assets/branding/io.github.themehub.png" "$ICON_DIR/128x128/apps/io.github.themehub.png"
 install -m 644 "$SCRIPT_DIR/assets/branding/io.github.themehub-64.png" "$ICON_DIR/64x64/apps/io.github.themehub-64.png"
 [ -f "$SCRIPT_DIR/assets/icons/custom-launchers/macos-launchpad.svg" ] && install -m 644 "$SCRIPT_DIR/assets/icons/custom-launchers/macos-launchpad.svg" "$ICON_DIR/scalable/apps/macos-launchpad.svg"
+[ -f "$SCRIPT_DIR/assets/icons/custom-launchers/apple-logo.svg" ] && install -m 644 "$SCRIPT_DIR/assets/icons/custom-launchers/apple-logo.svg" "$ICON_DIR/scalable/apps/apple-logo.svg"
 [ -f "$SCRIPT_DIR/assets/icons/custom-launchers/windows11-start.svg" ] && install -m 644 "$SCRIPT_DIR/assets/icons/custom-launchers/windows11-start.svg" "$ICON_DIR/scalable/apps/windows11-start.svg"
+[ -f "$SCRIPT_DIR/assets/icons/custom-launchers/modern-start.svg" ] && install -m 644 "$SCRIPT_DIR/assets/icons/custom-launchers/modern-start.svg" "$ICON_DIR/scalable/apps/modern-start.svg"
 
 # 5. Install assets
 echo "Installing theme assets (wallpapers, cursors, fonts, icons)..."

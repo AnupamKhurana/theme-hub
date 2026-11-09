@@ -278,6 +278,9 @@ def _apply_gnome(theme_id: str) -> bool:
     elif theme_id == "windows":
         ensure_win11_icons()
         ensure_windows_start_icon()
+    elif theme_id == "aesthetic":
+        ensure_tela_icons()
+        ensure_modern_start_icon()
 
     # 1. Dark mode & Themes
     subprocess.call(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", "prefer-dark"])
@@ -512,6 +515,43 @@ def ensure_windows_start_icon():
             shutil.copy2(src_icon, dst_icon)
 
 
+def ensure_tela_icons():
+    """Ensure Tela-circle and Tela-circle-dark icon themes are installed in user icons."""
+    for theme_name in ["Tela-circle", "Tela-circle-dark"]:
+        user_icon_theme = os.path.expanduser(f"~/.local/share/icons/{theme_name}")
+        app_check = os.path.join(user_icon_theme, "scalable", "apps", "systemsettings.svg")
+        if not os.path.exists(user_icon_theme) or not os.path.exists(app_check):
+            repo_icons = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "icons", theme_name))
+            if os.path.exists(repo_icons):
+                bundled_icons = repo_icons
+            else:
+                bundled_icons = get_asset_path("icons", theme_name)
+
+            if os.path.exists(bundled_icons):
+                os.makedirs(os.path.dirname(user_icon_theme), exist_ok=True)
+                if os.path.exists(user_icon_theme):
+                    if os.path.islink(user_icon_theme):
+                        os.unlink(user_icon_theme)
+                    else:
+                        shutil.rmtree(user_icon_theme)
+                shutil.copytree(bundled_icons, user_icon_theme, symlinks=True)
+                subprocess.call(["gtk-update-icon-cache", "-f", "-t", user_icon_theme], stderr=subprocess.DEVNULL)
+
+
+def ensure_modern_start_icon():
+    """Ensure Modern Aesthetic Start icon is installed in user icon directory."""
+    user_icon_dir = os.path.expanduser("~/.local/share/icons/hicolor/scalable/apps")
+    os.makedirs(user_icon_dir, exist_ok=True)
+    dst_icon = os.path.join(user_icon_dir, "modern-start.svg")
+    src_icon = get_asset_path("icons", "custom-launchers", "modern-start.svg")
+    if not os.path.exists(src_icon):
+        repo_icon = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "icons", "custom-launchers", "modern-start.svg"))
+        if os.path.exists(repo_icon):
+            src_icon = repo_icon
+    if os.path.exists(src_icon):
+        shutil.copy2(src_icon, dst_icon)
+
+
 def ensure_kde_plasma_theme():
     """Ensure WhiteSur-dark plasma desktop theme is installed in user's plasma directory."""
     user_theme_dir = os.path.expanduser("~/.local/share/plasma/desktoptheme/WhiteSur-dark")
@@ -666,6 +706,9 @@ if (primary) {{
     primary.currentConfigGroup = ["General"];
     primary.writeConfig("AppletOrder", orderList.join(";"));
     print("ORDER:" + primary.id + ":" + orderList.join(";"));
+    if (kickoffWidget) {{
+        print("KICKOFF:" + primary.id + ":" + kickoffWidget.id + ":{apple_logo}");
+    }}
     primary.reloadConfig();
 }}
 
@@ -818,14 +861,23 @@ if (primary) {{
     primary.currentConfigGroup = ["General"];
     primary.writeConfig("AppletOrder", orderList.join(";"));
     print("ORDER:" + primary.id + ":" + orderList.join(";"));
+    if (kickoffWidget) {{
+        print("KICKOFF:" + primary.id + ":" + kickoffWidget.id + ":{win_logo}");
+    }}
     primary.reloadConfig();
 }}
 """
 
     elif theme_id == "aesthetic":
-        tela_logo = "/usr/share/icons/Tela-circle-dark/scalable/apps/distributor-logo-debian.svg"
-        if not os.path.exists(tela_logo):
-            tela_logo = ""
+        modern_logo = get_asset_path("icons", "custom-launchers", "modern-start.svg")
+        if not os.path.exists(modern_logo):
+            repo_icon = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "icons", "custom-launchers", "modern-start.svg"))
+            if os.path.exists(repo_icon):
+                modern_logo = repo_icon
+            else:
+                modern_logo = "/usr/share/icons/custom-launchers/modern-start.svg"
+                if not os.path.exists(modern_logo):
+                    modern_logo = os.path.expanduser("~/.local/share/icons/hicolor/scalable/apps/modern-start.svg")
 
         js = f"""
 var ps = panels();
@@ -885,11 +937,7 @@ if (primary) {{
         }} else if (t == "org.kde.plasma.kickoff") {{
             kickoffWidget = ws[i];
             ws[i].currentConfigGroup = ["General"];
-            if ("{tela_logo}") {{
-                ws[i].writeConfig("icon", "{tela_logo}");
-            }} else {{
-                ws[i].writeConfig("icon", "");
-            }}
+            ws[i].writeConfig("icon", "{modern_logo}");
         }} else if (t == "org.kde.plasma.systemtray") trayWidget = ws[i];
         else if (t == "org.kde.plasma.digitalclock") clockWidget = ws[i];
         else if (t == "org.kde.plasma.panelspacer") spacers.push(ws[i]);
@@ -904,7 +952,11 @@ if (primary) {{
             tasksWidget.writeConfig("launchers", launchers);
         }}
     }}
-    if (!kickoffWidget) kickoffWidget = primary.addWidget("org.kde.plasma.kickoff");
+    if (!kickoffWidget) {{
+        kickoffWidget = primary.addWidget("org.kde.plasma.kickoff");
+        kickoffWidget.currentConfigGroup = ["General"];
+        kickoffWidget.writeConfig("icon", "{modern_logo}");
+    }}
     if (!trayWidget) trayWidget = primary.addWidget("org.kde.plasma.systemtray");
     if (!clockWidget) clockWidget = primary.addWidget("org.kde.plasma.digitalclock");
 
@@ -921,12 +973,17 @@ if (primary) {{
     if (clockWidget) {{
         clockWidget.currentConfigGroup = ["Appearance"];
         clockWidget.writeConfig("showDate", "true");
+        clockWidget.writeConfig("dateFormat", "custom");
+        clockWidget.writeConfig("customDateFormat", "ddd, MMM d  •  HH:mm");
     }}
 
     var orderList = [spacer1.id, kickoffWidget.id, tasksWidget.id, spacer2.id, trayWidget.id, clockWidget.id];
     primary.currentConfigGroup = ["General"];
     primary.writeConfig("AppletOrder", orderList.join(";"));
     print("ORDER:" + primary.id + ":" + orderList.join(";"));
+    if (kickoffWidget) {{
+        print("KICKOFF:" + primary.id + ":" + kickoffWidget.id + ":{modern_logo}");
+    }}
     primary.reloadConfig();
 }}
 """
@@ -936,13 +993,18 @@ if (primary) {{
     res = subprocess.run(["qdbus6", "org.kde.plasmashell", "/PlasmaShell", "evaluateScript", js], capture_output=True, text=True)
 
     orders = {}
+    kickoffs = {}
     for line in res.stdout.splitlines():
         if line.startswith("ORDER:"):
             parts = line.split(":")
             if len(parts) >= 3:
                 orders[parts[1]] = parts[2]
+        elif line.startswith("KICKOFF:"):
+            parts = line.split(":")
+            if len(parts) >= 4:
+                kickoffs[parts[1]] = (parts[2], parts[3])
 
-    if orders:
+    if orders or kickoffs:
         ret = subprocess.call(["systemctl", "--user", "stop", "plasma-plasmashell"], stderr=subprocess.DEVNULL)
         if ret != 0:
             subprocess.call(["kquitapp6", "plasmashell"], stderr=subprocess.DEVNULL)
@@ -958,6 +1020,21 @@ if (primary) {{
                 "--key", "AppletOrder",
                 applet_order
             ])
+
+        for cid, (kid, icon_path) in kickoffs.items():
+            if kid and icon_path:
+                subprocess.call([
+                    "kwriteconfig6",
+                    "--file", "plasma-org.kde.plasma.desktop-appletsrc",
+                    "--group", "Containments",
+                    "--group", str(cid),
+                    "--group", "Applets",
+                    "--group", str(kid),
+                    "--group", "Configuration",
+                    "--group", "General",
+                    "--key", "icon",
+                    icon_path
+                ])
 
         ret = subprocess.call(["systemctl", "--user", "start", "plasma-plasmashell"], stderr=subprocess.DEVNULL)
         if ret != 0:
@@ -983,6 +1060,10 @@ def _apply_kde(theme_id: str) -> bool:
         ensure_win11_icons()
         ensure_windows_start_icon()
         subprocess.call(["plasma-apply-desktoptheme", "breeze-dark"], stderr=subprocess.DEVNULL)
+    elif theme_id == "aesthetic":
+        ensure_tela_icons()
+        ensure_modern_start_icon()
+        subprocess.call(["plasma-apply-desktoptheme", "breeze-dark"], stderr=subprocess.DEVNULL)
     else:
         subprocess.call(["plasma-apply-desktoptheme", "breeze-dark"], stderr=subprocess.DEVNULL)
 
@@ -990,10 +1071,13 @@ def _apply_kde(theme_id: str) -> bool:
     subprocess.call(["kwriteconfig6", "--file", "kdeglobals", "--group", "Icons", "--key", "Theme", theme["icon_theme"]])
     subprocess.call(["plasma-apply-cursortheme", theme["cursor_theme"]], stderr=subprocess.DEVNULL)
 
-    # 3. Typography
+    # 3. Typography & Subpixel Rendering
     subprocess.call(["kwriteconfig6", "--file", "kdeglobals", "--group", "General", "--key", "font", "Inter,10.5,-1,5,50,0,0,0,0,0"])
     subprocess.call(["kwriteconfig6", "--file", "kdeglobals", "--group", "General", "--key", "fixed", "JetBrains Mono,10.5,-1,5,50,0,0,0,0,0"])
     subprocess.call(["kwriteconfig6", "--file", "kdeglobals", "--group", "WM", "--key", "activeFont", "Inter Semi-Bold,10.5,-1,5,75,0,0,0,0,0"])
+    subprocess.call(["kwriteconfig6", "--file", "kdeglobals", "--group", "General", "--key", "XftAntialias", "true"])
+    subprocess.call(["kwriteconfig6", "--file", "kdeglobals", "--group", "General", "--key", "XftHintStyle", "hintslight"])
+    subprocess.call(["kwriteconfig6", "--file", "kdeglobals", "--group", "General", "--key", "XftSubPixel", "rgb"])
 
     # 4. Window Buttons
     subprocess.call(["kwriteconfig6", "--file", "kwinrc", "--group", "org.kde.kdecoration2", "--key", "ButtonsOnLeft", theme["button_layout_kde_left"]])
@@ -1153,6 +1237,9 @@ def _apply_cinnamon(theme_id: str) -> bool:
     elif theme_id == "windows":
         ensure_win11_icons()
         ensure_windows_start_icon()
+    elif theme_id == "aesthetic":
+        ensure_tela_icons()
+        ensure_modern_start_icon()
 
     # 1. Interface themes
     subprocess.call(["gsettings", "set", "org.cinnamon.desktop.interface", "icon-theme", theme["icon_theme"]], stderr=subprocess.DEVNULL)
@@ -1216,6 +1303,9 @@ def _apply_xfce(theme_id: str) -> bool:
     elif theme_id == "windows":
         ensure_win11_icons()
         ensure_windows_start_icon()
+    elif theme_id == "aesthetic":
+        ensure_tela_icons()
+        ensure_modern_start_icon()
 
     # 1. Icons & Cursors
     subprocess.call(["xfconf-query", "-c", "xsettings", "-p", "/Net/IconThemeName", "-s", theme["icon_theme"], "--create", "-t", "string"], stderr=subprocess.DEVNULL)
@@ -1275,6 +1365,9 @@ def _apply_mate(theme_id: str) -> bool:
     elif theme_id == "windows":
         ensure_win11_icons()
         ensure_windows_start_icon()
+    elif theme_id == "aesthetic":
+        ensure_tela_icons()
+        ensure_modern_start_icon()
 
     subprocess.call(["gsettings", "set", "org.mate.interface", "icon-theme", theme["icon_theme"]], stderr=subprocess.DEVNULL)
     subprocess.call(["gsettings", "set", "org.mate.peripherals-mouse", "cursor-theme", theme["cursor_theme"]], stderr=subprocess.DEVNULL)
